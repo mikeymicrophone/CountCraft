@@ -64,6 +64,19 @@ enum GuessInputMode: String, CaseIterable, Identifiable {
 }
 
 @Model
+final class Profile {
+    @Attribute(.unique) var id: UUID
+    var name: String
+    @Relationship(inverse: \PracticeGuess.profile) var guesses: [PracticeGuess]
+
+    init(name: String) {
+        self.id = UUID()
+        self.name = name
+        self.guesses = []
+    }
+}
+
+@Model
 final class PracticeGuess {
     @Attribute(.unique) var id: UUID
     var timestamp: Date
@@ -76,6 +89,7 @@ final class PracticeGuess {
     var isCorrect: Bool
     var inputMode: String
     var answersShown: Bool
+    var profile: Profile?
 
     init(
         operation: OperationType,
@@ -87,6 +101,7 @@ final class PracticeGuess {
         isCorrect: Bool,
         inputMode: GuessInputMode,
         answersShown: Bool,
+        profile: Profile?,
         timestamp: Date = Date()
     ) {
         self.id = UUID()
@@ -100,5 +115,6 @@ final class PracticeGuess {
         self.isCorrect = isCorrect
         self.inputMode = inputMode.rawValue
         self.answersShown = answersShown
+        self.profile = profile
     }
 }

@@ -177,62 +177,104 @@ struct GuessSheet: View {
         Int(entryText) ?? 0
     }
 
+    @ViewBuilder
     private var hintView: some View {
         switch operation {
         case .exponent:
-            return expandedExponentView
+            expandedExponentView
         case .multiplication:
-            return AnyView(
-                Text(expandedMultiplicationText)
-                    .font(numberFont(size: 22, weight: .semibold))
-                    .foregroundColor(.secondary)
-            )
+            expandedMultiplicationView
         case .addition:
-            return AnyView(
-                Text(expandedAdditionText)
-                    .font(numberFont(size: 20, weight: .semibold))
-                    .foregroundColor(.secondary)
-            )
+            expandedAdditionView
         }
     }
 
-    private var expandedExponentView: AnyView {
+    @ViewBuilder
+    private var expandedExponentView: some View {
         let baseText = NumberFormatting.string(from: fact.a)
+        let baseColor = hintNumberColor(for: fact.a)
         if fact.b == 0 {
-            return AnyView(
-                VStack(spacing: 4) {
-                    Text(baseText)
-                    Rectangle()
-                        .frame(width: 40, height: 2)
-                    Text(baseText)
-                }
+            VStack(spacing: 4) {
+                Text(baseText)
+                    .foregroundColor(baseColor)
+                Rectangle()
+                    .frame(width: 40, height: 2)
+                    .foregroundColor(.secondary)
+                Text(baseText)
+                    .foregroundColor(baseColor)
+            }
+            .font(numberFont(size: 22, weight: .semibold))
+            .foregroundColor(.secondary)
+        } else {
+            repeatedText(
+                value: baseText,
+                count: fact.b,
+                separator: " x ",
+                color: baseColor
+            )
                 .font(numberFont(size: 22, weight: .semibold))
                 .foregroundColor(.secondary)
-            )
+        }
+    }
+
+    private var expandedMultiplicationView: some View {
+        let baseText = NumberFormatting.string(from: fact.a)
+        let baseColor = hintNumberColor(for: fact.a)
+        if fact.b <= 0 {
+            return Text("0")
+                .font(numberFont(size: 22, weight: .semibold))
+                .foregroundColor(.secondary)
         }
 
-        let factors = Array(repeating: baseText, count: fact.b)
-        return AnyView(
-            Text(factors.joined(separator: " x "))
-                .font(numberFont(size: 22, weight: .semibold))
-                .foregroundColor(.secondary)
+        return repeatedText(
+            value: baseText,
+            count: fact.b,
+            separator: " + ",
+            color: baseColor
         )
+            .font(numberFont(size: 22, weight: .semibold))
+            .foregroundColor(.secondary)
     }
 
-    private var expandedMultiplicationText: String {
-        guard fact.b > 0 else { return "0" }
-        let baseText = NumberFormatting.string(from: fact.a)
-        return Array(repeating: baseText, count: fact.b).joined(separator: " + ")
-    }
-
-    private var expandedAdditionText: String {
+    private var expandedAdditionView: some View {
         let left = onesGroup(count: fact.a)
         let right = onesGroup(count: fact.b)
-        return "\(left)   \(right)"
+        let oneColor = hintNumberColor(for: 1)
+        return HStack(spacing: 8) {
+            Text(left)
+                .foregroundColor(oneColor)
+            Text(" ")
+                .foregroundColor(.secondary)
+            Text(right)
+                .foregroundColor(oneColor)
+        }
+        .font(numberFont(size: 20, weight: .semibold))
+        .foregroundColor(.secondary)
     }
 
     private func onesGroup(count: Int) -> String {
         guard count > 0 else { return "0" }
         return Array(repeating: "1", count: count).joined(separator: " ")
+    }
+
+    private func hintNumberColor(for value: Int) -> Color {
+        numberColor(for: value) ?? .secondary
+    }
+
+    private func repeatedText(
+        value: String,
+        count: Int,
+        separator: String,
+        color: Color
+    ) -> Text {
+        guard count > 0 else { return Text("0").foregroundColor(.secondary) }
+        var text = Text("")
+        for index in 0..<count {
+            if index > 0 {
+                text = text + Text(separator).foregroundColor(.secondary)
+            }
+            text = text + Text(value).foregroundColor(color)
+        }
+        return text
     }
 }

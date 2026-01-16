@@ -10,6 +10,7 @@ import SwiftUI
 struct TablePracticeView: View {
     private let operation: OperationType
     private let guesses: [PracticeGuess]
+    private let profile: Profile?
     private let onGuess: (PracticeGuess) -> Void
 
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
@@ -25,9 +26,15 @@ struct TablePracticeView: View {
     @State private var activeFact: MathFact?
     @State private var showingPreferences = false
 
-    init(operation: OperationType, guesses: [PracticeGuess], onGuess: @escaping (PracticeGuess) -> Void) {
+    init(
+        operation: OperationType,
+        guesses: [PracticeGuess],
+        profile: Profile?,
+        onGuess: @escaping (PracticeGuess) -> Void
+    ) {
         self.operation = operation
         self.guesses = guesses
+        self.profile = profile
         self.onGuess = onGuess
         _axisMinX = AppStorage(wrappedValue: 0, "prefAxisMinX-\(operation.rawValue)")
         _axisMaxX = AppStorage(wrappedValue: 12, "prefAxisMaxX-\(operation.rawValue)")
@@ -194,7 +201,8 @@ struct TablePracticeView: View {
             userAnswer: userAnswer,
             isCorrect: isCorrect,
             inputMode: inputMode,
-            answersShown: answersShown
+            answersShown: answersShown,
+            profile: profile
         )
         onGuess(guess)
     }

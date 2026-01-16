@@ -6,20 +6,50 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct PreferencesView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Profile.name, order: .forward) private var profiles: [Profile]
+
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
     @AppStorage("prefChoiceDifficulty") private var difficultyRaw = ChoiceDifficulty.medium.rawValue
     @AppStorage("prefHintsShown") private var hintsShown = true
     @State private var selectedOperation: OperationType = .addition
     @State private var axisRefresh = 0
+    @AppStorage("selectedProfileId") private var selectedProfileId = ""
+    @State private var newProfileName = ""
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Form {
+                Section("Profiles") {
+                    ForEach(profiles) { profile in
+                        HStack(spacing: 12) {
+                            TextField("Profile name", text: profileNameBinding(for: profile))
+                            Spacer()
+                            Button {
+                                selectedProfileId = profile.id.uuidString
+                            } label: {
+                                Image(systemName: profile.id.uuidString == selectedProfileId ? "checkmark.circle.fill" : "circle")
+                                    .foregroundColor(profile.id.uuidString == selectedProfileId ? .accentColor : .secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    HStack(spacing: 8) {
+                        TextField("New profile name", text: $newProfileName)
+                        Button("Add") {
+                            addProfile()
+                        }
+                        .disabled(newProfileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+
                 Section("Numbers") {
                     Toggle("Color-code 0–12", isOn: $colorCodedNumbers)
                     Toggle("Hints Shown", isOn: $hintsShown)
@@ -56,7 +86,8 @@ struct PreferencesView: View {
                         label: "X:",
                         lowerValue: axisMinXBinding,
                         upperValue: axisMaxXBinding,
-                        bounds: 0...12
+                        bounds: 0...12,
+                        showsTickLabels: true
                     ) {
                         setAxisMinX(0)
                         setAxisMaxX(12)
@@ -66,7 +97,8 @@ struct PreferencesView: View {
                         label: "Y:",
                         lowerValue: axisMinYBinding,
                         upperValue: axisMaxYBinding,
-                        bounds: 0...12
+                        bounds: 0...12,
+                        showsTickLabels: true
                     ) {
                         setAxisMinY(0)
                         setAxisMaxY(12)
@@ -194,5 +226,24 @@ struct PreferencesView: View {
 
     private func gridKey(_ baseKey: String) -> String {
         "\(baseKey)-\(selectedOperation.rawValue)"
+    }
+
+    private func addProfile() {
+        let trimmed = newProfileName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let profile = Profile(name: trimmed)
+        modelContext.insert(profile)
+        selectedProfileId = profile.id.uuidString
+        newProfileName = ""
+    }
+
+    private func profileNameBinding(for profile: Profile) -> Binding<String> {
+        Binding(
+            get: { profile.name },
+            set: { newValue in
+                let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                profile.name = trimmed.isEmpty ? profile.name : trimmed
+            }
+        )
     }
 }

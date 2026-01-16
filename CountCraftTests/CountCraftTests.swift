@@ -64,6 +64,7 @@ private func makeGuess(correct: Bool) -> PracticeGuess {
         userAnswer: correct ? answer : 7,
         isCorrect: correct,
         inputMode: .multipleChoice,
-        answersShown: false
+        answersShown: false,
+        profile: nil
     )
 }

@@ -12,6 +12,7 @@ import SwiftData
 struct CountCraftApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
+            Profile.self,
             PracticeGuess.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)

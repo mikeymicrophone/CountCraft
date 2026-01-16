@@ -13,6 +13,7 @@ struct RangeSlider: View {
     @Binding var upperValue: Int
     let bounds: ClosedRange<Int>
     let onReset: () -> Void
+    var showsTickLabels: Bool = false
 
     private let handleSize: CGFloat = 24
     private let trackHeight: CGFloat = 6
@@ -41,13 +42,16 @@ struct RangeSlider: View {
                         .offset(x: lowerX, y: (handleSize - trackHeight) / 2)
 
                     tickMarks(trackWidth: trackWidth)
+                    if showsTickLabels {
+                        tickLabels(trackWidth: trackWidth)
+                    }
 
                     sliderHandle(value: lowerValue, trackWidth: trackWidth, isLower: true)
                     sliderHandle(value: upperValue, trackWidth: trackWidth, isLower: false)
                 }
-                .frame(height: handleSize)
+                .frame(height: showsTickLabels ? handleSize + 16 : handleSize)
             }
-            .frame(height: handleSize)
+            .frame(height: showsTickLabels ? handleSize + 16 : handleSize)
 
             Button(action: onReset) {
                 Image(systemName: resetIconName)
@@ -94,6 +98,16 @@ struct RangeSlider: View {
                 .fill(Color.secondary.opacity(0.35))
                 .frame(width: 1, height: 6)
                 .position(x: xPosition(for: value, trackWidth: trackWidth) + handleSize / 2, y: handleSize / 2)
+        }
+    }
+
+    private func tickLabels(trackWidth: CGFloat) -> some View {
+        let values = Array(bounds.lowerBound...bounds.upperBound)
+        return ForEach(values, id: \.self) { value in
+            Text("\(value)")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .position(x: xPosition(for: value, trackWidth: trackWidth) + handleSize / 2, y: handleSize + 10)
         }
     }
 
