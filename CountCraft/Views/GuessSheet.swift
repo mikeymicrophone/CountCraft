@@ -13,6 +13,7 @@ struct GuessSheet: View {
     let inputMode: GuessInputMode
     let onSubmit: (MathFact, Int?) -> Void
 
+    @AppStorage("prefHintsShown") private var hintsShown = true
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
     @AppStorage("prefChoiceDifficulty") private var difficultyRaw = ChoiceDifficulty.medium.rawValue
@@ -24,8 +25,8 @@ struct GuessSheet: View {
     var body: some View {
         VStack(spacing: 16) {
             VStack(spacing: 6) {
-                if operation == .exponent {
-                    expandedExponentView
+                if hintsShown {
+                    hintView
                 }
                 equationView
             }
@@ -176,7 +177,26 @@ struct GuessSheet: View {
         Int(entryText) ?? 0
     }
 
-    private var expandedExponentView: some View {
+    private var hintView: some View {
+        switch operation {
+        case .exponent:
+            return expandedExponentView
+        case .multiplication:
+            return AnyView(
+                Text(expandedMultiplicationText)
+                    .font(numberFont(size: 22, weight: .semibold))
+                    .foregroundColor(.secondary)
+            )
+        case .addition:
+            return AnyView(
+                Text(expandedAdditionText)
+                    .font(numberFont(size: 20, weight: .semibold))
+                    .foregroundColor(.secondary)
+            )
+        }
+    }
+
+    private var expandedExponentView: AnyView {
         let baseText = NumberFormatting.string(from: fact.a)
         if fact.b == 0 {
             return AnyView(
@@ -197,5 +217,22 @@ struct GuessSheet: View {
                 .font(numberFont(size: 22, weight: .semibold))
                 .foregroundColor(.secondary)
         )
+    }
+
+    private var expandedMultiplicationText: String {
+        guard fact.b > 0 else { return "0" }
+        let baseText = NumberFormatting.string(from: fact.a)
+        return Array(repeating: baseText, count: fact.b).joined(separator: " + ")
+    }
+
+    private var expandedAdditionText: String {
+        let left = onesGroup(count: fact.a)
+        let right = onesGroup(count: fact.b)
+        return "\(left)   \(right)"
+    }
+
+    private func onesGroup(count: Int) -> String {
+        guard count > 0 else { return "0" }
+        return Array(repeating: "1", count: count).joined(separator: " ")
     }
 }
