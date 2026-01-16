@@ -13,6 +13,9 @@ struct GuessSheet: View {
     let inputMode: GuessInputMode
     let onSubmit: (MathFact, Int?) -> Void
 
+    @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
+    @AppStorage("prefChoiceDifficulty") private var difficultyRaw = ChoiceDifficulty.medium.rawValue
+
     @Environment(\.dismiss) private var dismiss
     @State private var entryText = ""
     @State private var options: [Int] = []
@@ -20,8 +23,7 @@ struct GuessSheet: View {
     var body: some View {
         VStack(spacing: 16) {
             Text("\(fact.a) \(operation.symbol) \(fact.b) = ?")
-                .font(.largeTitle)
-                .fontWeight(.semibold)
+                .font(numberFont(size: 34, weight: .semibold))
 
             switch inputMode {
             case .multipleChoice:
@@ -31,7 +33,7 @@ struct GuessSheet: View {
                             submit(answer: option)
                         } label: {
                             Text("\(option)")
-                                .font(.title2)
+                                .font(numberFont(size: 22, weight: .semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(Color(.secondarySystemBackground))
@@ -43,7 +45,7 @@ struct GuessSheet: View {
             case .freeEntry:
                 VStack(spacing: 16) {
                     Text(entryText.isEmpty ? " " : entryText)
-                        .font(.largeTitle)
+                        .font(numberFont(size: 34, weight: .semibold))
                         .frame(width: 140, height: 56)
                         .background(Color(.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -64,7 +66,8 @@ struct GuessSheet: View {
             if inputMode == .multipleChoice {
                 options = PracticeMath.multipleChoiceOptions(
                     for: operation.answer(for: fact),
-                    maxValue: operation.maxResult
+                    maxValue: operation.maxResult,
+                    difficulty: choiceDifficulty
                 )
             }
         }
@@ -103,7 +106,7 @@ struct GuessSheet: View {
     private func keypadButton(label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
-                .font(.title2)
+                .font(numberFont(size: 22, weight: .semibold))
                 .frame(width: 64, height: 56)
                 .background(Color(.tertiarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -113,5 +116,17 @@ struct GuessSheet: View {
     private func appendDigit(_ digit: Int) {
         guard entryText.count < 3 else { return }
         entryText.append(String(digit))
+    }
+
+    private var numberFontChoice: NumberFontChoice {
+        NumberFontChoice(rawValue: numberFontRaw) ?? .rounded
+    }
+
+    private var choiceDifficulty: ChoiceDifficulty {
+        ChoiceDifficulty(rawValue: difficultyRaw) ?? .medium
+    }
+
+    private func numberFont(size: CGFloat, weight: Font.Weight) -> Font {
+        numberFontChoice.font(size: size, weight: weight)
     }
 }

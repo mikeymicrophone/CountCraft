@@ -11,11 +11,12 @@ struct FactCell: View {
     let label: String
     let status: FactStats?
     let isInteractive: Bool
+    let numberFont: Font
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Text(label)
-                .font(.headline)
+                .font(numberFont)
                 .frame(width: 44, height: 44)
                 .foregroundColor(.primary)
                 .background(backgroundColor)

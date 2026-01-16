@@ -12,9 +12,13 @@ struct TablePracticeView: View {
     private let guesses: [PracticeGuess]
     private let onGuess: (PracticeGuess) -> Void
 
+    @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
+    @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
+
     @State private var answersShown = true
     @State private var inputMode: GuessInputMode = .multipleChoice
     @State private var activeFact: MathFact?
+    @State private var showingPreferences = false
 
     private let numbers = Array(0...12)
 
@@ -33,6 +37,15 @@ struct TablePracticeView: View {
             }
             .padding()
             .navigationTitle("\(operation.title) Tables")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingPreferences = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
             .sheet(item: $activeFact) { fact in
                 GuessSheet(
                     operation: operation,
@@ -40,6 +53,9 @@ struct TablePracticeView: View {
                     inputMode: inputMode,
                     onSubmit: recordGuess(for:userAnswer:)
                 )
+            }
+            .sheet(isPresented: $showingPreferences) {
+                PreferencesView()
             }
         }
     }
@@ -105,13 +121,13 @@ struct TablePracticeView: View {
                 HStack(spacing: 8) {
                     headerCell("")
                     ForEach(numbers, id: \.self) { value in
-                        headerCell("\(value)")
+                        headerCell("\(value)", value: value)
                     }
                 }
 
                 ForEach(numbers, id: \.self) { row in
                     HStack(spacing: 8) {
-                        headerCell("\(row)")
+                        headerCell("\(row)", value: row)
                         ForEach(numbers, id: \.self) { column in
                             let fact = MathFact(a: row, b: column)
                             let stats = statsByFact[FactKey(a: row, b: column)]
@@ -124,7 +140,8 @@ struct TablePracticeView: View {
                                 FactCell(
                                     label: answersShown ? "\(answer)" : "?",
                                     status: stats,
-                                    isInteractive: !answersShown
+                                    isInteractive: !answersShown,
+                                    numberFont: numberFont(size: 16)
                                 )
                             }
                             .buttonStyle(.plain)
@@ -139,11 +156,12 @@ struct TablePracticeView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    private func headerCell(_ text: String) -> some View {
-        Text(text)
-            .font(.headline)
+    private func headerCell(_ text: String, value: Int? = nil) -> some View {
+        let color = value.flatMap { numberColor(for: $0) } ?? .primary
+        return Text(text)
+            .font(numberFont(size: 16))
             .frame(width: 44, height: 44)
-            .foregroundColor(.primary)
+            .foregroundColor(color)
             .background(Color(.tertiarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10))
     }
@@ -162,5 +180,22 @@ struct TablePracticeView: View {
             answersShown: answersShown
         )
         onGuess(guess)
+    }
+
+    private var numberFontChoice: NumberFontChoice {
+        NumberFontChoice(rawValue: numberFontRaw) ?? .rounded
+    }
+
+    private func numberFont(size: CGFloat) -> Font {
+        numberFontChoice.font(size: size, weight: .semibold)
+    }
+
+    private func numberColor(for value: Int) -> Color? {
+        guard colorCodedNumbers else { return nil }
+        let palette: [Color] = [
+            .red, .orange, .yellow, .green, .mint, .teal, .cyan,
+            .blue, .indigo, .purple, .pink, .brown, .gray
+        ]
+        return palette[value % palette.count]
     }
 }
