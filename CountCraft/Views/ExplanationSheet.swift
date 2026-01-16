@@ -89,17 +89,19 @@ struct ExplanationSheet: View {
     private var multiplicationExplanation: some View {
         VStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Banks of \(NumberFormatting.string(from: fact.b))")
+                Text("\(NumberFormatting.string(from: fact.a)) Groups of \(NumberFormatting.string(from: fact.b))")
                     .font(numberFont(size: 18, weight: .semibold))
                 LazyVGrid(columns: bankColumns, spacing: 10) {
-                    ForEach(0..<max(fact.a, 1), id: \.self) { _ in
+                    ForEach(0..<max(fact.a, 1), id: \.self) { index in
                         FitSquareGrid(
                             count: fact.b,
                             columns: gridColumns(for: fact.b),
                             color: numberColor(for: fact.b) ?? .secondary,
                             spacing: 4
                         )
-                        .frame(width: 100, height: 100)
+                        .frame(width: 80, height: 80)
+                        .padding(.vertical, 4)
+                        .padding(.top, index % 2 == 1 ? 16 : 0)
                     }
                 }
             }
@@ -115,6 +117,7 @@ struct ExplanationSheet: View {
                 )
                 .frame(maxWidth: 260, minHeight: 160)
             }
+            .padding(.bottom, 30)
         }
     }
 
@@ -192,7 +195,7 @@ struct ExplanationSheet: View {
     }
 
     private var bankColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 80), spacing: 12)]
+        [GridItem(.adaptive(minimum: 70), spacing: 16)]
     }
 
     private func canMove(rowDelta: Int, colDelta: Int) -> Bool {
