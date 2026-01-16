@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 struct MathFact: Identifiable, Hashable {
     let a: Int
@@ -49,11 +50,24 @@ struct FactStats {
 
 struct PracticeMath {
     static func multipleChoiceOptions(
-        for answer: Int,
+        for operation: OperationType,
+        fact: MathFact,
         maxValue: Int,
         difficulty: ChoiceDifficulty = .medium
     ) -> [Int] {
+        let answer = operation.answer(for: fact)
         var values: Set<Int> = [answer]
+        if difficulty == .hard, operation == .multiplication {
+            let distractors = multiplicationDistractors(
+                for: fact,
+                answer: answer,
+                maxValue: maxValue
+            )
+            for candidate in distractors where values.count < 4 {
+                values.insert(candidate)
+            }
+        }
+
         while values.count < 4 {
             if let candidate = candidateValue(
                 answer: answer,
@@ -64,6 +78,42 @@ struct PracticeMath {
             }
         }
         return values.shuffled()
+    }
+
+    private static func multiplicationDistractors(
+        for fact: MathFact,
+        answer: Int,
+        maxValue: Int
+    ) -> [Int] {
+        var candidates: [Int] = []
+
+        if let reversed = reversedDigits(of: answer), reversed <= maxValue {
+            candidates.append(reversed)
+        }
+
+        let multiples = uniqueMultiples(for: fact, maxValue: maxValue)
+        candidates.append(contentsOf: multiples.prefix(2))
+
+        return Array(Set(candidates)).shuffled()
+    }
+
+    private static func uniqueMultiples(for fact: MathFact, maxValue: Int) -> [Int] {
+        let aMultiples = multiples(of: fact.a, excluding: fact.b, maxValue: maxValue)
+        let bMultiples = multiples(of: fact.b, excluding: fact.a, maxValue: maxValue)
+        return Array(Set(aMultiples + bMultiples)).shuffled()
+    }
+
+    private static func multiples(of factor: Int, excluding other: Int, maxValue: Int) -> [Int] {
+        let limit = 0...12
+        return limit
+            .map { factor * $0 }
+            .filter { $0 <= maxValue && $0 != factor * other }
+    }
+
+    private static func reversedDigits(of value: Int) -> Int? {
+        guard value >= 10 else { return nil }
+        let reversedString = String(String(value).reversed())
+        return Int(reversedString)
     }
 
     private static func candidateValue(
@@ -95,6 +145,18 @@ struct PracticeMath {
         }
 
         return candidate
+    }
+}
+
+struct NumberStyling {
+    static let palette: [Color] = [
+        .red, .orange, .yellow, .green, .mint, .teal, .cyan,
+        .blue, .indigo, .purple, .pink, .brown, .gray
+    ]
+
+    static func color(for value: Int, enabled: Bool) -> Color? {
+        guard enabled, (0...12).contains(value) else { return nil }
+        return palette[value % palette.count]
     }
 }
 

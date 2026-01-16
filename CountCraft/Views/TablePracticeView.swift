@@ -191,11 +191,6 @@ struct TablePracticeView: View {
     }
 
     private func numberColor(for value: Int) -> Color? {
-        guard colorCodedNumbers else { return nil }
-        let palette: [Color] = [
-            .red, .orange, .yellow, .green, .mint, .teal, .cyan,
-            .blue, .indigo, .purple, .pink, .brown, .gray
-        ]
-        return palette[value % palette.count]
+        NumberStyling.color(for: value, enabled: colorCodedNumbers)
     }
 }

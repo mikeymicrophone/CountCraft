@@ -13,6 +13,7 @@ struct GuessSheet: View {
     let inputMode: GuessInputMode
     let onSubmit: (MathFact, Int?) -> Void
 
+    @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
     @AppStorage("prefChoiceDifficulty") private var difficultyRaw = ChoiceDifficulty.medium.rawValue
 
@@ -22,8 +23,7 @@ struct GuessSheet: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("\(fact.a) \(operation.symbol) \(fact.b) = ?")
-                .font(numberFont(size: 34, weight: .semibold))
+            equationView
 
             switch inputMode {
             case .multipleChoice:
@@ -36,6 +36,7 @@ struct GuessSheet: View {
                                 .font(numberFont(size: 22, weight: .semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
+                                .foregroundColor(numberColor(for: option) ?? .primary)
                                 .background(Color(.secondarySystemBackground))
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
@@ -47,6 +48,7 @@ struct GuessSheet: View {
                     Text(entryText.isEmpty ? " " : entryText)
                         .font(numberFont(size: 34, weight: .semibold))
                         .frame(width: 140, height: 56)
+                        .foregroundColor(entryColor)
                         .background(Color(.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
 
@@ -65,7 +67,8 @@ struct GuessSheet: View {
         .onAppear {
             if inputMode == .multipleChoice {
                 options = PracticeMath.multipleChoiceOptions(
-                    for: operation.answer(for: fact),
+                    for: operation,
+                    fact: fact,
                     maxValue: operation.maxResult,
                     difficulty: choiceDifficulty
                 )
@@ -118,6 +121,22 @@ struct GuessSheet: View {
         entryText.append(String(digit))
     }
 
+    private var equationView: some View {
+        HStack(spacing: 8) {
+            Text("\(fact.a)")
+                .foregroundColor(numberColor(for: fact.a) ?? .primary)
+            Text(operation.symbol)
+                .foregroundColor(.primary)
+            Text("\(fact.b)")
+                .foregroundColor(numberColor(for: fact.b) ?? .primary)
+            Text("=")
+                .foregroundColor(.primary)
+            Text("?")
+                .foregroundColor(.primary)
+        }
+        .font(numberFont(size: 34, weight: .semibold))
+    }
+
     private var numberFontChoice: NumberFontChoice {
         NumberFontChoice(rawValue: numberFontRaw) ?? .rounded
     }
@@ -128,5 +147,14 @@ struct GuessSheet: View {
 
     private func numberFont(size: CGFloat, weight: Font.Weight) -> Font {
         numberFontChoice.font(size: size, weight: weight)
+    }
+
+    private func numberColor(for value: Int) -> Color? {
+        NumberStyling.color(for: value, enabled: colorCodedNumbers)
+    }
+
+    private var entryColor: Color {
+        guard let value = Int(entryText) else { return .primary }
+        return numberColor(for: value) ?? .primary
     }
 }

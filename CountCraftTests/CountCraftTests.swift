@@ -38,7 +38,12 @@ struct CountCraftTests {
     }
 
     @Test func multipleChoiceOptionsIncludeAnswer() {
-        let options = PracticeMath.multipleChoiceOptions(for: 9, maxValue: 24)
+        let fact = MathFact(a: 4, b: 5)
+        let options = PracticeMath.multipleChoiceOptions(
+            for: .addition,
+            fact: fact,
+            maxValue: 24
+        )
 
         #expect(options.count == 4)
         #expect(Set(options).count == 4)
