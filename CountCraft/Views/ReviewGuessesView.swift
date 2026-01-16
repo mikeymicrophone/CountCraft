@@ -227,9 +227,9 @@ enum ReviewDateFilter: String, CaseIterable, Identifiable {
         case .today:
             return "Today"
         case .lastSeven:
-            return "7d"
+            return "Week"
         case .lastThirty:
-            return "30d"
+            return "Month"
         }
     }
 
@@ -396,7 +396,7 @@ struct ReviewHeaderRow: View {
 
             headerCell(title: "Guess", sortKey: .guess, width: ReviewColumns.guess)
             headerCell(title: "Answer", sortKey: .answer, width: ReviewColumns.answer)
-            headerCell(title: "Check", sortKey: .check, width: ReviewColumns.check)
+            headerCell(image: Image(systemName: "checkmark.circle.fill"), sortKey: .check, width: ReviewColumns.check)
             headerCell(title: "Difficulty", sortKey: .difficulty, width: ReviewColumns.difficulty)
             headerCell(
                 title: "When",
@@ -415,6 +415,24 @@ struct ReviewHeaderRow: View {
     ) -> some View {
         HStack(spacing: 4) {
             Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: alignment)
+            if let key = sortKey {
+                sortButton(for: key)
+            }
+        }
+        .frame(width: width)
+    }
+
+    private func headerCell(
+        image: Image,
+        sortKey: SortKey? = nil,
+        width: CGFloat,
+        alignment: Alignment = .leading
+    ) -> some View {
+        HStack(spacing: 4) {
+            image
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: alignment)
@@ -664,3 +682,4 @@ private extension PracticeGuess {
         GuessInputMode(rawValue: inputMode)?.title ?? "Unknown mode"
     }
 }
+
