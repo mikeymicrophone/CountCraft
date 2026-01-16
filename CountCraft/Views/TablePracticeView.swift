@@ -23,7 +23,7 @@ struct TablePracticeView: View {
 
     @State private var answersShown = true
     @State private var inputMode: GuessInputMode = .multipleChoice
-    @State private var activeFact: MathFact?
+    @State private var activeSheet: TableSheetItem?
     @State private var showingPreferences = false
 
     init(
@@ -60,13 +60,26 @@ struct TablePracticeView: View {
                     }
                 }
             }
-            .sheet(item: $activeFact) { fact in
-                GuessSheet(
-                    operation: operation,
-                    fact: fact,
-                    inputMode: inputMode,
-                    onSubmit: recordGuess(for:userAnswer:)
-                )
+            .sheet(item: $activeSheet) { item in
+                switch item.mode {
+                case .guess:
+                    GuessSheet(
+                        operation: operation,
+                        fact: item.fact,
+                        inputMode: inputMode,
+                        onSubmit: recordGuess(for:userAnswer:)
+                    )
+                case .explain:
+                    ExplanationSheet(
+                        operation: operation,
+                        fact: item.fact,
+                        rowValues: rowValues,
+                        columnValues: columnValues,
+                        onNavigate: { newFact in
+                            activeSheet = TableSheetItem(fact: newFact, mode: .explain)
+                        }
+                    )
+                }
             }
             .sheet(isPresented: $showingPreferences) {
                 PreferencesView()
@@ -155,8 +168,10 @@ struct TablePracticeView: View {
                             let answerLabel = NumberFormatting.string(from: answer)
                             let cellFontSize = fontSize(for: answerLabel)
                             Button {
-                                if !answersShown {
-                                    activeFact = fact
+                                if answersShown {
+                                    activeSheet = TableSheetItem(fact: fact, mode: .explain)
+                                } else {
+                                    activeSheet = TableSheetItem(fact: fact, mode: .guess)
                                 }
                             } label: {
                                 FactCell(
@@ -167,7 +182,6 @@ struct TablePracticeView: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            .disabled(answersShown)
                         }
                     }
                 }
@@ -249,4 +263,15 @@ struct TablePracticeView: View {
         }
         return 10
     }
+}
+
+private enum TableSheetMode {
+    case guess
+    case explain
+}
+
+private struct TableSheetItem: Identifiable {
+    let id = UUID()
+    let fact: MathFact
+    let mode: TableSheetMode
 }
