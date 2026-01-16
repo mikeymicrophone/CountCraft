@@ -60,15 +60,13 @@ struct ExplanationSheet: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var exponentPlaceholder: some View {
-        VStack(spacing: 12) {
-            Text("Exponent explanations are coming next.")
-                .font(numberFont(size: 18, weight: .semibold))
-            Text("I can show repeated multiplication, layered grids, or growth bars.")
-                .font(.footnote)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
+    private var exponentExplanation: some View {
+        ExponentExplanationView(
+            base: fact.a,
+            exponent: fact.b,
+            color: numberColor(for: fact.a) ?? .blue,
+            numberFont: numberFont
+        )
     }
 
     private func gridColumns(for value: Int) -> Int {
@@ -82,7 +80,7 @@ struct ExplanationSheet: View {
         case .multiplication:
             return AnyView(multiplicationExplanation)
         case .exponent:
-            return AnyView(exponentPlaceholder)
+            return AnyView(exponentExplanation)
         }
     }
 
@@ -270,5 +268,200 @@ struct FitSquareGrid: View {
 
     private func gridItems(size: CGFloat) -> [GridItem] {
         Array(repeating: GridItem(.fixed(size), spacing: spacing), count: max(columns, 1))
+    }
+}
+
+struct ExponentExplanationView: View {
+    let base: Int
+    let exponent: Int
+    let color: Color
+    let numberFont: (CGFloat, Font.Weight) -> Font
+
+    @State private var currentStep: Int = 1
+
+    private var maxStep: Int {
+        max(exponent, 1)
+    }
+
+    private func valueAtStep(_ step: Int) -> Int {
+        Int(pow(Double(base), Double(step)))
+    }
+
+    private func labelForStep(_ step: Int) -> String {
+        if step == 1 {
+            return "\(base)"
+        } else {
+            let previousValue = valueAtStep(step - 1)
+            let currentValue = valueAtStep(step)
+            return "\(base) groups of \(previousValue) = \(currentValue)"
+        }
+    }
+
+    private func groupCountAtStep(_ step: Int) -> Int {
+        if step == 1 {
+            return 1
+        } else {
+            return base
+        }
+    }
+
+    private func squaresPerGroupAtStep(_ step: Int) -> Int {
+        if step == 1 {
+            return base
+        } else {
+            return valueAtStep(step - 1)
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Step label
+            Text(labelForStep(currentStep))
+                .font(numberFont(18, .semibold))
+                .animation(.none, value: currentStep)
+
+            // Segmented picker for steps
+            Picker("Step", selection: $currentStep) {
+                ForEach(1...maxStep, id: \.self) { step in
+                    Text("\(base)\(superscript(step))").tag(step)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+
+            // Visualization
+            GroupedSquaresView(
+                groupCount: groupCountAtStep(currentStep),
+                squaresPerGroup: squaresPerGroupAtStep(currentStep),
+                base: base,
+                color: color
+            )
+            .frame(maxWidth: .infinity, minHeight: 200)
+            .animation(.easeInOut(duration: 0.3), value: currentStep)
+            .padding(.bottom, 30)
+        }
+    }
+
+    private func superscript(_ n: Int) -> String {
+        let superscripts = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]
+        if n < 10 {
+            return superscripts[n]
+        }
+        return String(n).map { superscripts[Int(String($0))!] }.joined()
+    }
+}
+
+struct GroupedSquaresView: View {
+    let groupCount: Int
+    let squaresPerGroup: Int
+    let base: Int
+    let color: Color
+
+    private var totalSquares: Int {
+        groupCount * squaresPerGroup
+    }
+
+    private var columns: Int {
+        // For nested groups, use base as column count within each group
+        min(base, 6)
+    }
+
+    private func squareSizeFor(total: Int, availableWidth: CGFloat, availableHeight: CGFloat) -> CGFloat {
+        // Calculate appropriate square size based on total count
+        let maxSize: CGFloat = 24
+        let minSize: CGFloat = 4
+
+        if total <= 16 {
+            return maxSize
+        } else if total <= 64 {
+            return 18
+        } else if total <= 256 {
+            return 12
+        } else if total <= 1024 {
+            return 8
+        } else {
+            return minSize
+        }
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let squareSize = squareSizeFor(total: totalSquares, availableWidth: proxy.size.width, availableHeight: proxy.size.height)
+            let groupSpacing: CGFloat = squareSize > 10 ? 12 : 6
+            let innerSpacing: CGFloat = max(2, squareSize * 0.15)
+
+            let groupColumns = adaptiveGroupColumns(
+                groupCount: groupCount,
+                squaresPerGroup: squaresPerGroup,
+                squareSize: squareSize,
+                groupSpacing: groupSpacing,
+                innerSpacing: innerSpacing,
+                availableWidth: proxy.size.width
+            )
+
+            ScrollView {
+                LazyVGrid(columns: groupColumns, spacing: groupSpacing) {
+                    ForEach(0..<groupCount, id: \.self) { groupIndex in
+                        SingleGroupView(
+                            squareCount: squaresPerGroup,
+                            columns: columns,
+                            squareSize: squareSize,
+                            spacing: innerSpacing,
+                            color: color,
+                            showBorder: groupCount > 1
+                        )
+                        .padding(.top, groupIndex % 2 == 1 && groupCount > 1 ? groupSpacing : 0)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private func adaptiveGroupColumns(
+        groupCount: Int,
+        squaresPerGroup: Int,
+        squareSize: CGFloat,
+        groupSpacing: CGFloat,
+        innerSpacing: CGFloat,
+        availableWidth: CGFloat
+    ) -> [GridItem] {
+        let cols = min(squaresPerGroup, columns)
+        let groupWidth = CGFloat(cols) * squareSize + CGFloat(cols - 1) * innerSpacing + 16
+        let maxGroupsPerRow = max(1, Int((availableWidth + groupSpacing) / (groupWidth + groupSpacing)))
+        let groupsPerRow = min(groupCount, maxGroupsPerRow)
+
+        return Array(repeating: GridItem(.flexible(), spacing: groupSpacing), count: groupsPerRow)
+    }
+}
+
+struct SingleGroupView: View {
+    let squareCount: Int
+    let columns: Int
+    let squareSize: CGFloat
+    let spacing: CGFloat
+    let color: Color
+    let showBorder: Bool
+
+    private var rows: Int {
+        max(1, Int(ceil(Double(squareCount) / Double(columns))))
+    }
+
+    var body: some View {
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.fixed(squareSize), spacing: spacing), count: columns),
+            spacing: spacing
+        ) {
+            ForEach(0..<squareCount, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: max(2, squareSize * 0.12))
+                    .fill(color.opacity(0.85))
+                    .frame(width: squareSize, height: squareSize)
+            }
+        }
+        .padding(showBorder ? 8 : 0)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(color.opacity(showBorder ? 0.3 : 0), lineWidth: 2)
+        )
     }
 }
