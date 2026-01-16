@@ -14,7 +14,7 @@ struct FactCell: View {
     let numberFont: Font
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack(alignment: badgeAlignment) {
             Text(label)
                 .font(numberFont)
                 .frame(width: 44, height: 44)
@@ -43,5 +43,19 @@ struct FactCell: View {
             return Color.red.opacity(0.2)
         }
         return Color(.secondarySystemBackground)
+    }
+
+    private var badgeAlignment: Alignment {
+        guard let correctCount = status?.correct else { return .topTrailing }
+        switch correctCount % 4 {
+        case 1:
+            return .bottomTrailing
+        case 2:
+            return .bottomLeading
+        case 3:
+            return .topLeading
+        default:
+            return .topTrailing
+        }
     }
 }

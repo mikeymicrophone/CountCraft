@@ -150,8 +150,8 @@ struct PracticeMath {
 
 struct NumberStyling {
     static let palette: [Color] = [
-        .red, .orange, .yellow, .green, .mint, .teal, .cyan,
-        .blue, .indigo, .purple, .pink, .brown, .gray
+        .red, .orange, .yellow, .green, .mint, .pink, .cyan,
+        .blue, .indigo, .purple, .teal, .brown, .gray
     ]
 
     static func color(for value: Int, enabled: Bool) -> Color? {
@@ -170,3 +170,4 @@ extension OperationType {
         }
     }
 }
+

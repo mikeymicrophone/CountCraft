@@ -80,6 +80,13 @@ struct PreferencesView: View {
                                 }
                             }
                     }
+
+                    Button("Reset Grid Limits") {
+                        axisMinX = 0
+                        axisMaxX = 12
+                        axisMinY = 0
+                        axisMaxY = 12
+                    }
                 }
             }
             .navigationTitle("Preferences")

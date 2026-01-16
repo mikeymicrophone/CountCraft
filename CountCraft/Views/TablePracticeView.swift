@@ -64,7 +64,13 @@ struct TablePracticeView: View {
     }
 
     private var filteredGuesses: [PracticeGuess] {
-        guesses.filter { $0.operation == operation.rawValue }
+        let rowSet = Set(rowValues)
+        let columnSet = Set(columnValues)
+        return guesses.filter { guess in
+            guess.operation == operation.rawValue
+                && rowSet.contains(guess.a)
+                && columnSet.contains(guess.b)
+        }
     }
 
     private var statsByFact: [FactKey: FactStats] {
