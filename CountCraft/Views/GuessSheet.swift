@@ -41,10 +41,14 @@ struct GuessSheet: View {
                 }
 
             case .freeEntry:
-                VStack(spacing: 12) {
-                    TextField("Type answer", text: $entryText)
-                        .keyboardType(.numberPad)
-                        .textFieldStyle(.roundedBorder)
+                VStack(spacing: 16) {
+                    Text(entryText.isEmpty ? " " : entryText)
+                        .font(.largeTitle)
+                        .frame(width: 140, height: 56)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    keypad
 
                     Button("Submit") {
                         let trimmed = entryText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -69,5 +73,45 @@ struct GuessSheet: View {
     private func submit(answer: Int?) {
         onSubmit(fact, answer)
         dismiss()
+    }
+
+    private var keypad: some View {
+        let columns = Array(repeating: GridItem(.fixed(64), spacing: 12), count: 3)
+        return LazyVGrid(columns: columns, spacing: 12) {
+            ForEach(1...9, id: \.self) { number in
+                keypadButton(label: "\(number)") {
+                    appendDigit(number)
+                }
+            }
+
+            keypadButton(label: "Del") {
+                if !entryText.isEmpty {
+                    entryText.removeLast()
+                }
+            }
+
+            keypadButton(label: "0") {
+                appendDigit(0)
+            }
+
+            keypadButton(label: "Clear") {
+                entryText.removeAll()
+            }
+        }
+    }
+
+    private func keypadButton(label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.title2)
+                .frame(width: 64, height: 56)
+                .background(Color(.tertiarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private func appendDigit(_ digit: Int) {
+        guard entryText.count < 3 else { return }
+        entryText.append(String(digit))
     }
 }
