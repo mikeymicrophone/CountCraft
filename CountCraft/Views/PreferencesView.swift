@@ -50,25 +50,22 @@ struct PreferencesView: View {
                     }
                     .pickerStyle(.segmented)
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("X Axis (top)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Stepper("Min: \(axisMinX)", value: axisMinXBinding, in: 0...12)
-                        Stepper("Max: \(axisMaxX)", value: axisMaxXBinding, in: 0...12)
-                    }
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Y Axis (side)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Stepper("Min: \(axisMinY)", value: axisMinYBinding, in: 0...12)
-                        Stepper("Max: \(axisMaxY)", value: axisMaxYBinding, in: 0...12)
-                    }
-
-                    Button("Reset Grid Limits") {
+                    RangeSlider(
+                        label: "X:",
+                        lowerValue: axisMinXBinding,
+                        upperValue: axisMaxXBinding,
+                        bounds: 0...12
+                    ) {
                         setAxisMinX(0)
                         setAxisMaxX(12)
+                    }
+
+                    RangeSlider(
+                        label: "Y:",
+                        lowerValue: axisMinYBinding,
+                        upperValue: axisMaxYBinding,
+                        bounds: 0...12
+                    ) {
                         setAxisMinY(0)
                         setAxisMaxY(12)
                     }
