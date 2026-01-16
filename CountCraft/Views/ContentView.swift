@@ -23,6 +23,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("Multiply", systemImage: "multiply")
                 }
+
+            ReviewGuessesView(guesses: guesses)
+                .tabItem {
+                    Label("Review", systemImage: "list.bullet.rectangle")
+                }
         }
     }
 
