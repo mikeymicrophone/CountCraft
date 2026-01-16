@@ -141,16 +141,18 @@ struct TablePracticeView: View {
                             let fact = MathFact(a: row, b: column)
                             let stats = statsByFact[FactKey(a: row, b: column)]
                             let answer = operation.answer(for: fact)
+                            let answerLabel = NumberFormatting.string(from: answer)
+                            let cellFontSize = fontSize(for: answerLabel)
                             Button {
                                 if !answersShown {
                                     activeFact = fact
                                 }
                             } label: {
                                 FactCell(
-                                    label: answersShown ? "\(answer)" : "?",
+                                    label: answersShown ? answerLabel : "?",
                                     status: stats,
                                     isInteractive: !answersShown,
-                                    numberFont: numberFont(size: 16)
+                                    numberFont: numberFont(size: cellFontSize)
                                 )
                             }
                             .buttonStyle(.plain)
@@ -220,5 +222,19 @@ struct TablePracticeView: View {
             return Array(lower...upper)
         }
         return Array(upper...lower)
+    }
+
+    private func fontSize(for label: String) -> CGFloat {
+        let length = label.count
+        if length <= 3 {
+            return 16
+        }
+        if length == 4 {
+            return 14
+        }
+        if length == 5 {
+            return 12
+        }
+        return 10
     }
 }

@@ -186,6 +186,7 @@ enum OperationFilter: String, CaseIterable, Identifiable {
     case all
     case addition
     case multiplication
+    case exponent
 
     var id: String { rawValue }
 
@@ -197,6 +198,8 @@ enum OperationFilter: String, CaseIterable, Identifiable {
             return "Add"
         case .multiplication:
             return "Multiply"
+        case .exponent:
+            return "Exponent"
         }
     }
 
@@ -206,7 +209,10 @@ enum OperationFilter: String, CaseIterable, Identifiable {
             if self == .addition {
                 return operation == .addition
             }
-            return operation == .multiplication
+            if self == .multiplication {
+                return operation == .multiplication
+            }
+            return operation == .exponent
         }
         return true
     }

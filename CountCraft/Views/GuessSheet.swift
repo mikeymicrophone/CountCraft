@@ -32,7 +32,7 @@ struct GuessSheet: View {
                         Button {
                             submit(answer: option)
                         } label: {
-                            Text("\(option)")
+                            Text(NumberFormatting.string(from: option))
                                 .font(numberFont(size: 22, weight: .semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
@@ -45,7 +45,7 @@ struct GuessSheet: View {
 
             case .freeEntry:
                 VStack(spacing: 16) {
-                    Text(entryText.isEmpty ? " " : entryText)
+                    Text(entryText.isEmpty ? " " : NumberFormatting.string(from: entryValue))
                         .font(numberFont(size: 34, weight: .semibold))
                         .frame(width: 140, height: 56)
                         .foregroundColor(entryColor)
@@ -123,12 +123,21 @@ struct GuessSheet: View {
 
     private var equationView: some View {
         HStack(spacing: 8) {
-            Text("\(fact.a)")
-                .foregroundColor(numberColor(for: fact.a) ?? .primary)
-            Text(operation.symbol)
-                .foregroundColor(.primary)
-            Text("\(fact.b)")
-                .foregroundColor(numberColor(for: fact.b) ?? .primary)
+            if operation == .exponent {
+                Text("\(fact.a)")
+                    .foregroundColor(numberColor(for: fact.a) ?? .primary)
+                Text("\(fact.b)")
+                    .font(numberFont(size: 20, weight: .semibold))
+                    .baselineOffset(16)
+                    .foregroundColor(numberColor(for: fact.b) ?? .primary)
+            } else {
+                Text("\(fact.a)")
+                    .foregroundColor(numberColor(for: fact.a) ?? .primary)
+                Text(operation.symbol)
+                    .foregroundColor(.primary)
+                Text("\(fact.b)")
+                    .foregroundColor(numberColor(for: fact.b) ?? .primary)
+            }
             Text("=")
                 .foregroundColor(.primary)
             Text("?")
@@ -156,5 +165,9 @@ struct GuessSheet: View {
     private var entryColor: Color {
         guard let value = Int(entryText) else { return .primary }
         return numberColor(for: value) ?? .primary
+    }
+
+    private var entryValue: Int {
+        Int(entryText) ?? 0
     }
 }

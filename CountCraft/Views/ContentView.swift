@@ -24,6 +24,11 @@ struct ContentView: View {
                     Label("Multiply", systemImage: "multiply")
                 }
 
+            TablePracticeView(operation: .exponent, guesses: guesses, onGuess: recordGuess)
+                .tabItem {
+                    Label("Exponents", systemImage: "function")
+                }
+
             ReviewGuessesView(guesses: guesses)
                 .tabItem {
                     Label("Review", systemImage: "list.bullet.rectangle")

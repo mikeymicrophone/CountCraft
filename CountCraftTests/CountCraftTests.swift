@@ -14,6 +14,7 @@ struct CountCraftTests {
 
         #expect(OperationType.addition.answer(for: fact) == 13)
         #expect(OperationType.multiplication.answer(for: fact) == 42)
+        #expect(OperationType.exponent.answer(for: MathFact(a: 2, b: 5)) == 32)
     }
 
     @Test func factStatsTracksAccuracyAndMastery() {

@@ -148,6 +148,19 @@ struct PracticeMath {
     }
 }
 
+struct NumberFormatting {
+    static func string(from value: Int) -> String {
+        formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+
+    private static let formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        return formatter
+    }()
+}
+
 struct NumberStyling {
     static let palette: [Color] = [
         .red, .orange, .yellow, .green, .mint, .pink, .cyan,
@@ -167,7 +180,17 @@ extension OperationType {
             return fact.a + fact.b
         case .multiplication:
             return fact.a * fact.b
+        case .exponent:
+            return integerPower(base: fact.a, exponent: fact.b)
         }
     }
-}
 
+    private func integerPower(base: Int, exponent: Int) -> Int {
+        guard exponent > 0 else { return exponent == 0 ? 1 : 0 }
+        var result = 1
+        for _ in 0..<exponent {
+            result *= base
+        }
+        return result
+    }
+}

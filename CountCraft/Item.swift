@@ -11,6 +11,7 @@ import SwiftData
 enum OperationType: String, CaseIterable, Identifiable {
     case addition
     case multiplication
+    case exponent
 
     var id: String { rawValue }
     var title: String {
@@ -19,6 +20,8 @@ enum OperationType: String, CaseIterable, Identifiable {
             return "Add"
         case .multiplication:
             return "Multiply"
+        case .exponent:
+            return "Exponents"
         }
     }
 
@@ -28,6 +31,8 @@ enum OperationType: String, CaseIterable, Identifiable {
             return "+"
         case .multiplication:
             return "x"
+        case .exponent:
+            return "^"
         }
     }
 
@@ -37,6 +42,8 @@ enum OperationType: String, CaseIterable, Identifiable {
             return 24
         case .multiplication:
             return 144
+        case .exponent:
+            return 1000000
         }
     }
 }
