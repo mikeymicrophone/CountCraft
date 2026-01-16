@@ -61,6 +61,7 @@ final class PracticeGuess {
     @Attribute(.unique) var id: UUID
     var timestamp: Date
     var operation: String
+    var difficulty: String?
     var a: Int
     var b: Int
     var correctAnswer: Int
@@ -71,6 +72,7 @@ final class PracticeGuess {
 
     init(
         operation: OperationType,
+        difficulty: ChoiceDifficulty,
         a: Int,
         b: Int,
         correctAnswer: Int,
@@ -83,6 +85,7 @@ final class PracticeGuess {
         self.id = UUID()
         self.timestamp = timestamp
         self.operation = operation.rawValue
+        self.difficulty = difficulty.rawValue
         self.a = a
         self.b = b
         self.correctAnswer = correctAnswer

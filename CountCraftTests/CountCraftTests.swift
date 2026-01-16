@@ -56,6 +56,7 @@ private func makeGuess(correct: Bool) -> PracticeGuess {
     let answer = 10
     return PracticeGuess(
         operation: .addition,
+        difficulty: .medium,
         a: 4,
         b: 6,
         correctAnswer: answer,

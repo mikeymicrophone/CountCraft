@@ -14,13 +14,16 @@ struct TablePracticeView: View {
 
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
+    @AppStorage("prefChoiceDifficulty") private var difficultyRaw = ChoiceDifficulty.medium.rawValue
+    @AppStorage("prefAxisMinX") private var axisMinX = 0
+    @AppStorage("prefAxisMaxX") private var axisMaxX = 12
+    @AppStorage("prefAxisMinY") private var axisMinY = 0
+    @AppStorage("prefAxisMaxY") private var axisMaxY = 12
 
     @State private var answersShown = true
     @State private var inputMode: GuessInputMode = .multipleChoice
     @State private var activeFact: MathFact?
     @State private var showingPreferences = false
-
-    private let numbers = Array(0...12)
 
     init(operation: OperationType, guesses: [PracticeGuess], onGuess: @escaping (PracticeGuess) -> Void) {
         self.operation = operation
@@ -79,7 +82,7 @@ struct TablePracticeView: View {
         let attempts = filteredGuesses.count
         let correct = filteredGuesses.filter { $0.isCorrect }.count
         let accuracy = attempts == 0 ? 0 : Double(correct) / Double(attempts)
-        let totalFacts = numbers.count * numbers.count
+        let totalFacts = rowValues.count * columnValues.count
         let mastered = statsByFact.values.filter { $0.isMastered }.count
 
         return VStack(alignment: .leading, spacing: 8) {
@@ -120,15 +123,15 @@ struct TablePracticeView: View {
             LazyVStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     headerCell("")
-                    ForEach(numbers, id: \.self) { value in
+                    ForEach(columnValues, id: \.self) { value in
                         headerCell("\(value)", value: value)
                     }
                 }
 
-                ForEach(numbers, id: \.self) { row in
+                ForEach(rowValues, id: \.self) { row in
                     HStack(spacing: 8) {
                         headerCell("\(row)", value: row)
-                        ForEach(numbers, id: \.self) { column in
+                        ForEach(columnValues, id: \.self) { column in
                             let fact = MathFact(a: row, b: column)
                             let stats = statsByFact[FactKey(a: row, b: column)]
                             let answer = operation.answer(for: fact)
@@ -167,10 +170,12 @@ struct TablePracticeView: View {
     }
 
     private func recordGuess(for fact: MathFact, userAnswer: Int?) {
+        let difficulty = ChoiceDifficulty(rawValue: difficultyRaw) ?? .medium
         let correctAnswer = operation.answer(for: fact)
         let isCorrect = userAnswer == correctAnswer
         let guess = PracticeGuess(
             operation: operation,
+            difficulty: difficulty,
             a: fact.a,
             b: fact.b,
             correctAnswer: correctAnswer,
@@ -192,5 +197,22 @@ struct TablePracticeView: View {
 
     private func numberColor(for value: Int) -> Color? {
         NumberStyling.color(for: value, enabled: colorCodedNumbers)
+    }
+
+    private var rowValues: [Int] {
+        normalizedRange(minValue: axisMinY, maxValue: axisMaxY)
+    }
+
+    private var columnValues: [Int] {
+        normalizedRange(minValue: axisMinX, maxValue: axisMaxX)
+    }
+
+    private func normalizedRange(minValue: Int, maxValue: Int) -> [Int] {
+        let lower = min(max(minValue, 0), 12)
+        let upper = min(max(maxValue, 0), 12)
+        if lower <= upper {
+            return Array(lower...upper)
+        }
+        return Array(upper...lower)
     }
 }
