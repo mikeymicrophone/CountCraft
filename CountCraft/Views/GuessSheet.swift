@@ -23,7 +23,12 @@ struct GuessSheet: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            equationView
+            VStack(spacing: 6) {
+                if operation == .exponent {
+                    expandedExponentView
+                }
+                equationView
+            }
 
             switch inputMode {
             case .multipleChoice:
@@ -169,5 +174,28 @@ struct GuessSheet: View {
 
     private var entryValue: Int {
         Int(entryText) ?? 0
+    }
+
+    private var expandedExponentView: some View {
+        let baseText = NumberFormatting.string(from: fact.a)
+        if fact.b == 0 {
+            return AnyView(
+                VStack(spacing: 4) {
+                    Text(baseText)
+                    Rectangle()
+                        .frame(width: 40, height: 2)
+                    Text(baseText)
+                }
+                .font(numberFont(size: 22, weight: .semibold))
+                .foregroundColor(.secondary)
+            )
+        }
+
+        let factors = Array(repeating: baseText, count: fact.b)
+        return AnyView(
+            Text(factors.joined(separator: " x "))
+                .font(numberFont(size: 22, weight: .semibold))
+                .foregroundColor(.secondary)
+        )
     }
 }

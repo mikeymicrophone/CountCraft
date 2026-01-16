@@ -15,10 +15,10 @@ struct TablePracticeView: View {
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
     @AppStorage("prefChoiceDifficulty") private var difficultyRaw = ChoiceDifficulty.medium.rawValue
-    @AppStorage("prefAxisMinX") private var axisMinX = 0
-    @AppStorage("prefAxisMaxX") private var axisMaxX = 12
-    @AppStorage("prefAxisMinY") private var axisMinY = 0
-    @AppStorage("prefAxisMaxY") private var axisMaxY = 12
+    @AppStorage private var axisMinX: Int
+    @AppStorage private var axisMaxX: Int
+    @AppStorage private var axisMinY: Int
+    @AppStorage private var axisMaxY: Int
 
     @State private var answersShown = true
     @State private var inputMode: GuessInputMode = .multipleChoice
@@ -29,6 +29,10 @@ struct TablePracticeView: View {
         self.operation = operation
         self.guesses = guesses
         self.onGuess = onGuess
+        _axisMinX = AppStorage(wrappedValue: 0, "prefAxisMinX-\(operation.rawValue)")
+        _axisMaxX = AppStorage(wrappedValue: 12, "prefAxisMaxX-\(operation.rawValue)")
+        _axisMinY = AppStorage(wrappedValue: 0, "prefAxisMinY-\(operation.rawValue)")
+        _axisMaxY = AppStorage(wrappedValue: 12, "prefAxisMaxY-\(operation.rawValue)")
     }
 
     var body: some View {
