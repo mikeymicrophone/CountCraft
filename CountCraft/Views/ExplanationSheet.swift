@@ -23,8 +23,11 @@ struct ExplanationSheet: View {
                 headerView
                 ZStack {
                     explanationContent
+                        .frame(maxWidth: 520)
+                        .padding(.horizontal, 24)
                     navigationArrows
                 }
+                .frame(maxWidth: .infinity, minHeight: 280)
             }
             .padding()
         }
@@ -88,17 +91,15 @@ struct ExplanationSheet: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Banks of \(NumberFormatting.string(from: fact.b))")
                     .font(numberFont(size: 18, weight: .semibold))
-                ScrollView(.horizontal) {
-                    LazyHStack(spacing: 16) {
-                        ForEach(0..<max(fact.a, 1), id: \.self) { _ in
-                            SquareGrid(
-                                count: fact.b,
-                                columns: gridColumns(for: fact.b),
-                                color: numberColor(for: fact.b) ?? .secondary,
-                                size: 24,
-                                spacing: 6
-                            )
-                        }
+                LazyVGrid(columns: bankColumns, spacing: 10) {
+                    ForEach(0..<max(fact.a, 1), id: \.self) { _ in
+                        FitSquareGrid(
+                            count: fact.b,
+                            columns: gridColumns(for: fact.b),
+                            color: numberColor(for: fact.b) ?? .secondary,
+                            spacing: 4
+                        )
+                        .frame(width: 100, height: 100)
                     }
                 }
             }
@@ -106,13 +107,13 @@ struct ExplanationSheet: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Grid \(NumberFormatting.string(from: fact.a)) × \(NumberFormatting.string(from: fact.b))")
                     .font(numberFont(size: 18, weight: .semibold))
-                SquareGrid(
+                FitSquareGrid(
                     count: fact.a * fact.b,
                     columns: max(fact.b, 1),
                     color: numberColor(for: fact.a) ?? .secondary,
-                    size: 22,
-                    spacing: 5
+                    spacing: 3
                 )
+                .frame(maxWidth: 260, minHeight: 160)
             }
         }
     }
@@ -128,7 +129,7 @@ struct ExplanationSheet: View {
                 ) {
                     move(rowDelta: -1, colDelta: 0)
                 }
-                .position(x: width / 2, y: 12)
+                .position(x: width / 2, y: 8)
 
                 arrowButton(
                     systemName: "arrow.down",
@@ -136,7 +137,7 @@ struct ExplanationSheet: View {
                 ) {
                     move(rowDelta: 1, colDelta: 0)
                 }
-                .position(x: width / 2, y: height - 12)
+                .position(x: width / 2, y: height - 8)
 
                 arrowButton(
                     systemName: "arrow.left",
@@ -144,7 +145,7 @@ struct ExplanationSheet: View {
                 ) {
                     move(rowDelta: 0, colDelta: -1)
                 }
-                .position(x: 12, y: height / 2)
+                .position(x: 8, y: height / 2)
 
                 arrowButton(
                     systemName: "arrow.right",
@@ -152,7 +153,7 @@ struct ExplanationSheet: View {
                 ) {
                     move(rowDelta: 0, colDelta: 1)
                 }
-                .position(x: width - 12, y: height / 2)
+                .position(x: width - 8, y: height / 2)
             }
         }
     }
@@ -176,18 +177,22 @@ struct ExplanationSheet: View {
     }
 
     private func bankColumn(label: String, value: Int) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Text(label)
                 .font(numberFont(size: 18, weight: .semibold))
                 .foregroundColor(numberColor(for: value) ?? .primary)
-            SquareGrid(
+            FitSquareGrid(
                 count: value,
                 columns: gridColumns(for: value),
                 color: numberColor(for: value) ?? .secondary,
-                size: 24,
-                spacing: 6
+                spacing: 4
             )
+            .frame(width: 100, height: 100)
         }
+    }
+
+    private var bankColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 80), spacing: 12)]
     }
 
     private func canMove(rowDelta: Int, colDelta: Int) -> Bool {
@@ -225,12 +230,13 @@ struct ExplanationSheet: View {
     }
 }
 
-struct SquareGrid: View {
+struct FitSquareGrid: View {
     let count: Int
     let columns: Int
     let color: Color
-    var size: CGFloat = 14
     var spacing: CGFloat = 4
+    var minSize: CGFloat = 8
+    var maxSize: CGFloat = 20
 
     var body: some View {
         if count <= 0 {
@@ -238,17 +244,28 @@ struct SquareGrid: View {
                 .font(.footnote)
                 .foregroundColor(.secondary)
         } else {
-            LazyVGrid(columns: gridItems, spacing: spacing) {
-                ForEach(0..<count, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(color.opacity(0.85))
-                        .frame(width: size, height: size)
+            GeometryReader { proxy in
+                let cols = max(columns, 1)
+                let rows = max(Int(ceil(Double(count) / Double(cols))), 1)
+                let width = proxy.size.width
+                let height = proxy.size.height
+                let sizeByWidth = (width - CGFloat(cols - 1) * spacing) / CGFloat(cols)
+                let sizeByHeight = (height - CGFloat(rows - 1) * spacing) / CGFloat(rows)
+                let size = min(maxSize, max(minSize, min(sizeByWidth, sizeByHeight)))
+
+                LazyVGrid(columns: gridItems(size: size), spacing: spacing) {
+                    ForEach(0..<count, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(color.opacity(0.85))
+                            .frame(width: size, height: size)
+                    }
                 }
+                .frame(width: width, height: height, alignment: .center)
             }
         }
     }
 
-    private var gridItems: [GridItem] {
+    private func gridItems(size: CGFloat) -> [GridItem] {
         Array(repeating: GridItem(.fixed(size), spacing: spacing), count: max(columns, 1))
     }
 }
