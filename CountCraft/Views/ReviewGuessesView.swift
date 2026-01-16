@@ -87,26 +87,8 @@ struct ReviewGuessesView: View {
                                 b: guess.b
                             )
                         } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(guess.titleLine)
-                                    .font(.headline)
-
-                                Text(guess.detailLine)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-
-                                HStack(spacing: 8) {
-                                    Text(guess.isCorrect ? "Correct" : "Missed")
-                                        .font(.caption)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(guess.isCorrect ? .green : .red)
-
-                                    Text(guess.timestamp, format: Date.FormatStyle(date: .abbreviated, time: .shortened))
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            .padding(.vertical, 6)
+                            ReviewGuessRow(guess: guess)
+                                .padding(.vertical, 6)
                         }
                     }
                 }
@@ -235,32 +217,60 @@ struct PairHistoryView: View {
 
     var body: some View {
         List(matchingGuesses) { guess in
-            VStack(alignment: .leading, spacing: 6) {
-                Text(guess.titleLine)
-                    .font(.headline)
-
-                Text(guess.detailLine)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-
-                HStack(spacing: 8) {
-                    Text(guess.isCorrect ? "Correct" : "Missed")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(guess.isCorrect ? .green : .red)
-
-                    Text(guess.timestamp, format: Date.FormatStyle(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .padding(.vertical, 6)
+            ReviewGuessRow(guess: guess)
+                .padding(.vertical, 6)
         }
         .navigationTitle("\(a) \(operationSymbol) \(b)")
     }
 
     private var operationSymbol: String {
         OperationType(rawValue: operation)?.symbol ?? "?"
+    }
+}
+
+struct ReviewGuessRow: View {
+    let guess: PracticeGuess
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(NumberFormatting.string(from: guess.a))
+                .frame(width: 36, alignment: .leading)
+
+            Text(NumberFormatting.string(from: guess.b))
+                .frame(width: 36, alignment: .leading)
+
+            Text(guessAnswerText)
+                .frame(width: 64, alignment: .leading)
+
+            Text(NumberFormatting.string(from: guess.correctAnswer))
+                .frame(width: 64, alignment: .leading)
+
+            Image(systemName: guess.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .foregroundColor(guess.isCorrect ? .green : .red)
+                .frame(width: 26, alignment: .leading)
+
+            Text(difficultyText)
+                .frame(width: 74, alignment: .leading)
+
+            Text(guess.timestamp, style: .relative)
+                .foregroundColor(.secondary)
+                .frame(minWidth: 70, alignment: .trailing)
+        }
+        .font(.subheadline)
+        .foregroundColor(.primary)
+    }
+
+    private var guessAnswerText: String {
+        guard let answer = guess.userAnswer else { return "—" }
+        return NumberFormatting.string(from: answer)
+    }
+
+    private var difficultyText: String {
+        guard let value = guess.difficulty,
+              let difficulty = ChoiceDifficulty(rawValue: value) else {
+            return "Unknown"
+        }
+        return difficulty.title
     }
 }
 
