@@ -70,6 +70,12 @@ struct ContentView: View {
                 }
                 .tag(TabSelection.sets)
 
+            ProbabilityView()
+                .tabItem {
+                    Label("Probability", systemImage: "chart.bar.xaxis")
+                }
+                .tag(TabSelection.probability)
+
             ReviewGuessesView(guesses: activeGuesses)
                 .tabItem {
                     Label("Review", systemImage: "list.bullet.rectangle")
@@ -150,6 +156,7 @@ private enum TabSelection: Hashable {
     case exponent
     case sets
     case review
+    case probability
 }
 
 #Preview {

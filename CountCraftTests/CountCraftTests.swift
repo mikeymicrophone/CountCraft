@@ -101,6 +101,23 @@ struct CountCraftTests {
         #expect(Combinatorics.choose(n: 8, k: 6) == 28)
         #expect(Combinatorics.choose(n: 8, k: 0) == 1)
     }
+
+    @Test func probabilityAtLeastSuccessesForDice() {
+        let fraction = Probability.atLeastSuccesses(
+            trials: 7,
+            successesAtLeast: 7,
+            successOutcomes: 1,
+            totalOutcomes: 6
+        )
+        #expect(fraction.numerator == 1)
+        #expect(fraction.denominator == 279936)
+    }
+
+    @Test func fractionReducesValues() {
+        let fraction = Fraction(numerator: 6, denominator: 8)
+        #expect(fraction.numerator == 3)
+        #expect(fraction.denominator == 4)
+    }
 }
 
 private func makeGuess(correct: Bool) -> PracticeGuess {
