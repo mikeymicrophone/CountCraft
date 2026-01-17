@@ -20,74 +20,27 @@ struct ExplanationSheet: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                headerView
+                ExplanationHeaderView(
+                    operation: operation,
+                    fact: fact,
+                    numberFont: numberFont,
+                    numberColor: numberColor
+                )
                 ZStack {
                     explanationContent
                         .frame(maxWidth: operation == .exponent ? .infinity : 520)
                         .padding(.horizontal, operation == .exponent ? 16 : 24)
                         .padding(.top, 18)
-                    navigationArrows
+                    ExplanationNavigationArrows(
+                        fact: fact,
+                        rowValues: rowValues,
+                        columnValues: columnValues,
+                        onNavigate: onNavigate
+                    )
                 }
                 .frame(maxWidth: .infinity, minHeight: operation == .exponent ? 360 : 280)
             }
             .padding()
-        }
-    }
-
-    @ViewBuilder
-    private var headerView: some View {
-        if operation == .exponent {
-            HStack(spacing: 6) {
-                exponentSuperscriptText(
-                    base: fact.a,
-                    exponent: fact.b,
-                    baseSize: 28,
-                    exponentSize: 18,
-                    exponentOffset: 12,
-                    baseColor: numberColor(for: fact.a) ?? .primary,
-                    exponentColor: numberColor(for: fact.b) ?? .primary
-                )
-                Text("=")
-                    .foregroundColor(.secondary)
-                    .font(numberFont(size: 28, weight: .semibold))
-                Text(NumberFormatting.string(from: operation.answer(for: fact)))
-                    .foregroundColor(numberColor(for: operation.answer(for: fact)) ?? .primary)
-                    .font(numberFont(size: 28, weight: .semibold))
-            }
-        } else {
-            HStack(spacing: 8) {
-                Text(NumberFormatting.string(from: fact.a))
-                    .foregroundColor(numberColor(for: fact.a) ?? .primary)
-                Text(operation.symbol)
-                    .foregroundColor(.secondary)
-                Text(NumberFormatting.string(from: fact.b))
-                    .foregroundColor(numberColor(for: fact.b) ?? .primary)
-                Text("=")
-                    .foregroundColor(.secondary)
-                Text(NumberFormatting.string(from: operation.answer(for: fact)))
-                    .foregroundColor(numberColor(for: operation.answer(for: fact)) ?? .primary)
-            }
-            .font(numberFont(size: 28, weight: .semibold))
-        }
-    }
-
-    private func exponentSuperscriptText(
-        base: Int,
-        exponent: Int,
-        baseSize: CGFloat,
-        exponentSize: CGFloat,
-        exponentOffset: CGFloat,
-        baseColor: Color,
-        exponentColor: Color
-    ) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
-            Text(NumberFormatting.string(from: base))
-                .foregroundColor(baseColor)
-                .font(numberFont(size: baseSize, weight: .semibold))
-            Text(NumberFormatting.string(from: exponent))
-                .foregroundColor(exponentColor)
-                .font(numberFont(size: exponentSize, weight: .semibold))
-                .baselineOffset(exponentOffset)
         }
     }
 
@@ -161,64 +114,6 @@ struct ExplanationSheet: View {
         }
     }
 
-    private var navigationArrows: some View {
-        GeometryReader { proxy in
-            let width = proxy.size.width
-            let height = proxy.size.height
-            ZStack {
-                arrowButton(
-                    systemName: "arrow.up",
-                    enabled: canMove(rowDelta: -1, colDelta: 0)
-                ) {
-                    move(rowDelta: -1, colDelta: 0)
-                }
-                .position(x: width / 2, y: 8)
-
-                arrowButton(
-                    systemName: "arrow.down",
-                    enabled: canMove(rowDelta: 1, colDelta: 0)
-                ) {
-                    move(rowDelta: 1, colDelta: 0)
-                }
-                .position(x: width / 2, y: height - 8)
-
-                arrowButton(
-                    systemName: "arrow.left",
-                    enabled: canMove(rowDelta: 0, colDelta: -1)
-                ) {
-                    move(rowDelta: 0, colDelta: -1)
-                }
-                .position(x: 8, y: height / 2)
-
-                arrowButton(
-                    systemName: "arrow.right",
-                    enabled: canMove(rowDelta: 0, colDelta: 1)
-                ) {
-                    move(rowDelta: 0, colDelta: 1)
-                }
-                .position(x: width - 8, y: height / 2)
-            }
-        }
-    }
-
-    private func arrowButton(
-        systemName: String,
-        enabled: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.headline)
-                .foregroundColor(enabled ? .secondary : Color.secondary.opacity(0.35))
-                .padding(8)
-                .background(Color(.systemBackground))
-                .clipShape(Circle())
-                .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-    }
-
     private func bankColumn(label: String, value: Int) -> some View {
         VStack(spacing: 8) {
             Text(label)
@@ -236,28 +131,6 @@ struct ExplanationSheet: View {
 
     private var bankColumns: [GridItem] {
         [GridItem(.adaptive(minimum: 70), spacing: 16)]
-    }
-
-    private func canMove(rowDelta: Int, colDelta: Int) -> Bool {
-        guard let rowIndex = rowValues.firstIndex(of: fact.a),
-              let colIndex = columnValues.firstIndex(of: fact.b) else {
-            return false
-        }
-        let targetRow = rowIndex + rowDelta
-        let targetCol = colIndex + colDelta
-        return rowValues.indices.contains(targetRow) && columnValues.indices.contains(targetCol)
-    }
-
-    private func move(rowDelta: Int, colDelta: Int) {
-        guard let rowIndex = rowValues.firstIndex(of: fact.a),
-              let colIndex = columnValues.firstIndex(of: fact.b) else {
-            return
-        }
-        let targetRow = rowIndex + rowDelta
-        let targetCol = colIndex + colDelta
-        guard rowValues.indices.contains(targetRow), columnValues.indices.contains(targetCol) else { return }
-        let next = MathFact(a: rowValues[targetRow], b: columnValues[targetCol])
-        onNavigate(next)
     }
 
     private var numberFontChoice: NumberFontChoice {

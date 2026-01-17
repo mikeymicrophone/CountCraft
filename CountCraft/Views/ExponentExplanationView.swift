@@ -31,12 +31,14 @@ struct ExponentExplanationView: View {
 
     private func labelForStep(_ step: Int) -> String {
         if step == 1 {
-            return "\(base)"
-        } else {
-            let previousValue = valueAtStep(step - 1)
-            let currentValue = valueAtStep(step)
-            return "\(base) groups of \(previousValue) = \(currentValue)"
+            return NumberFormatting.string(from: base)
         }
+        let leftExp = step / 2
+        let rightExp = step - leftExp
+        let leftValue = valueAtStep(leftExp)
+        let rightValue = valueAtStep(rightExp)
+        let currentValue = valueAtStep(step)
+        return "\(NumberFormatting.string(from: leftValue)) groups of \(NumberFormatting.string(from: rightValue)) = \(NumberFormatting.string(from: currentValue))"
     }
 
     private func startPlaying() {
