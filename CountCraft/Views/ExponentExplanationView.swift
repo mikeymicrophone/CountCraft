@@ -59,7 +59,7 @@ struct ExponentExplanationView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Text(labelForStep(step))
                 .font(numberStyle.font(size: 18, weight: .semibold))
                 .animation(.none, value: step)
@@ -94,9 +94,9 @@ struct ExponentExplanationView: View {
             .padding(.horizontal)
 
             ExponentSceneView(base: base, depth: step, color: color)
-                .frame(maxWidth: .infinity, minHeight: 476)
+                .frame(maxWidth: .infinity, minHeight: 300, idealHeight: 340, maxHeight: 380)
                 .animation(.easeInOut(duration: 0.2), value: step)
-                .padding(.bottom, 30)
+                .padding(.bottom, 16)
         }
         .onDisappear {
             stopPlaying()

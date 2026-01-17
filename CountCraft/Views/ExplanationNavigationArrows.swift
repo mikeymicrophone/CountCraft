@@ -19,8 +19,8 @@ struct ExplanationNavigationArrows: View {
         GeometryReader { proxy in
             let width = proxy.size.width
             let height = proxy.size.height
-            let topY: CGFloat = 24
-            let operationOffset: CGFloat = 44
+            let topY: CGFloat = 16
+            let operationOffset: CGFloat = 40
             ZStack {
                 arrowButton(
                     systemName: "arrow.up.left",

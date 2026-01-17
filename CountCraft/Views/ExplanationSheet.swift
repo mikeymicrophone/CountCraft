@@ -30,7 +30,7 @@ struct ExplanationSheet: View {
                     explanationContent
                         .frame(maxWidth: operation == .exponent ? .infinity : 520)
                         .padding(.horizontal, operation == .exponent ? 16 : 24)
-                        .padding(.top, 18)
+                        .padding(.top, operation == .exponent ? 48 : 28)
                     ExplanationNavigationArrows(
                         operation: operation,
                         fact: fact,
@@ -40,7 +40,7 @@ struct ExplanationSheet: View {
                         onSwitchOperation: onSwitchOperation
                     )
                 }
-                .frame(maxWidth: .infinity, minHeight: operation == .exponent ? 360 : 280)
+                .frame(maxWidth: .infinity, minHeight: operation == .exponent ? 320 : 280)
             }
             .padding()
         }
