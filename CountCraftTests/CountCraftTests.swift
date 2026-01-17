@@ -109,14 +109,14 @@ struct CountCraftTests {
             successOutcomes: 1,
             totalOutcomes: 6
         )
-        #expect(fraction.numerator == 1)
-        #expect(fraction.denominator == 279936)
+        #expect(fraction.numerator == Decimal(1))
+        #expect(fraction.denominator == Decimal(279936))
     }
 
     @Test func fractionReducesValues() {
         let fraction = Fraction(numerator: 6, denominator: 8)
-        #expect(fraction.numerator == 3)
-        #expect(fraction.denominator == 4)
+        #expect(fraction.numerator == Decimal(3))
+        #expect(fraction.denominator == Decimal(4))
     }
 }
 

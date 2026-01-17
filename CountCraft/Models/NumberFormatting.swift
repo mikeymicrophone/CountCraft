@@ -12,6 +12,10 @@ struct NumberFormatting {
         formatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 
+    static func string(from value: Decimal) -> String {
+        formatter.string(from: NSDecimalNumber(decimal: value)) ?? "\(value)"
+    }
+
     private static let formatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

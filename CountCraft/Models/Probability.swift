@@ -8,8 +8,8 @@
 import Foundation
 
 struct Fraction: Equatable {
-    let numerator: Int
-    let denominator: Int
+    let numerator: Decimal
+    let denominator: Decimal
 
     init(numerator: Int, denominator: Int) {
         if denominator == 0 {
@@ -19,12 +19,27 @@ struct Fraction: Equatable {
         }
         let sign = denominator < 0 ? -1 : 1
         let gcdValue = Fraction.greatestCommonDivisor(abs(numerator), abs(denominator))
-        self.numerator = sign * numerator / gcdValue
-        self.denominator = abs(denominator) / gcdValue
+        self.numerator = Decimal(sign * numerator / gcdValue)
+        self.denominator = Decimal(abs(denominator) / gcdValue)
+    }
+
+    init(numerator: Decimal, denominator: Decimal) {
+        if denominator == 0 {
+            self.numerator = 0
+            self.denominator = 1
+            return
+        }
+        if denominator < 0 {
+            self.numerator = -numerator
+            self.denominator = -denominator
+        } else {
+            self.numerator = numerator
+            self.denominator = denominator
+        }
     }
 
     var value: Double {
-        Double(numerator) / Double(denominator)
+        NSDecimalNumber(decimal: numerator).doubleValue / NSDecimalNumber(decimal: denominator).doubleValue
     }
 
     var formatted: String {
@@ -61,22 +76,24 @@ struct Probability {
         }
 
         let failureOutcomes = max(totalOutcomes - successOutcomes, 0)
-        var numerator = 0
+        var numerator = Decimal(0)
         for k in successesAtLeast...trials {
             let ways = Combinatorics.choose(n: trials, k: k)
-            let successWays = intPow(successOutcomes, k)
-            let failureWays = intPow(failureOutcomes, trials - k)
-            numerator += ways * successWays * failureWays
+            let successWays = decimalPow(successOutcomes, k)
+            let failureWays = decimalPow(failureOutcomes, trials - k)
+            let term = Decimal(ways) * successWays * failureWays
+            numerator += term
         }
-        let denominator = intPow(totalOutcomes, trials)
+        let denominator = decimalPow(totalOutcomes, trials)
         return Fraction(numerator: numerator, denominator: denominator)
     }
 
-    private static func intPow(_ base: Int, _ exponent: Int) -> Int {
+    private static func decimalPow(_ base: Int, _ exponent: Int) -> Decimal {
         guard exponent > 0 else { return exponent == 0 ? 1 : 0 }
-        var result = 1
+        var result = Decimal(1)
+        let baseDecimal = Decimal(base)
         for _ in 0..<exponent {
-            result *= base
+            result *= baseDecimal
         }
         return result
     }

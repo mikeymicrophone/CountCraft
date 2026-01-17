@@ -48,7 +48,7 @@ struct ProbabilityView: View {
                         format: format
                     )
                 case .cards:
-                    placeholder("Card outcomes are coming next.")
+                    ProbabilityCardsGridView(format: format)
                 }
 
                 Spacer(minLength: 0)
@@ -97,6 +97,71 @@ private enum ProbabilityFormat: String, CaseIterable, Identifiable {
             return "Fraction"
         case .decimal:
             return "Decimal"
+        }
+    }
+}
+
+private struct ProbabilityCardsGridView: View {
+    let format: ProbabilityFormat
+    @State private var focus: CardFocus = .face
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Picker("Card Focus", selection: $focus) {
+                ForEach(CardFocus.allCases) { focus in
+                    Text(focus.title).tag(focus)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            ProbabilityGridView(
+                title: "At least x \(focus.rowLabel) after y draws",
+                rowLabel: "Rows: x (\(focus.rowLabel)). Columns: y (draws).",
+                successOutcomes: focus.successOutcomes,
+                totalOutcomes: 52,
+                format: format
+            )
+        }
+    }
+}
+
+private enum CardFocus: String, CaseIterable, Identifiable {
+    case face
+    case suit
+    case color
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .face:
+            return "Face"
+        case .suit:
+            return "Suit"
+        case .color:
+            return "Color"
+        }
+    }
+
+    var rowLabel: String {
+        switch self {
+        case .face:
+            return "aces"
+        case .suit:
+            return "spades"
+        case .color:
+            return "black cards"
+        }
+    }
+
+    var successOutcomes: Int {
+        switch self {
+        case .face:
+            return 4
+        case .suit:
+            return 13
+        case .color:
+            return 26
         }
     }
 }
