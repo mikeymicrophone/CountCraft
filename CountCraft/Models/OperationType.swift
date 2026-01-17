@@ -11,6 +11,7 @@ enum OperationType: String, CaseIterable, Identifiable {
     case addition
     case multiplication
     case exponent
+    case sets
 
     var id: String { rawValue }
     var title: String {
@@ -21,6 +22,8 @@ enum OperationType: String, CaseIterable, Identifiable {
             return "Multiply"
         case .exponent:
             return "Exponents"
+        case .sets:
+            return "Sets"
         }
     }
 
@@ -32,6 +35,8 @@ enum OperationType: String, CaseIterable, Identifiable {
             return "x"
         case .exponent:
             return "^"
+        case .sets:
+            return "C"
         }
     }
 
@@ -43,6 +48,8 @@ enum OperationType: String, CaseIterable, Identifiable {
             return 144
         case .exponent:
             return 1000000
+        case .sets:
+            return 1716
         }
     }
 }
@@ -56,6 +63,8 @@ extension OperationType {
             return fact.a * fact.b
         case .exponent:
             return integerPower(base: fact.a, exponent: fact.b)
+        case .sets:
+            return combinationsCount(setSize: fact.a, maxElement: fact.b)
         }
     }
 
@@ -66,5 +75,10 @@ extension OperationType {
             result *= base
         }
         return result
+    }
+
+    private func combinationsCount(setSize: Int, maxElement: Int) -> Int {
+        let available = maxElement + 1
+        return Combinatorics.choose(n: available, k: setSize)
     }
 }

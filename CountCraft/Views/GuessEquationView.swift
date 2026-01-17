@@ -21,6 +21,17 @@ struct GuessEquationView: View {
                     .font(numberStyle.font(size: 20, weight: .semibold))
                     .baselineOffset(16)
                     .foregroundColor(numberStyle.primaryColor(for: fact.b))
+            } else if operation == .sets {
+                Text("C(")
+                    .foregroundColor(.secondary)
+                Text(NumberFormatting.string(from: fact.b + 1))
+                    .foregroundColor(numberStyle.primaryColor(for: fact.b + 1))
+                Text(",")
+                    .foregroundColor(.secondary)
+                Text(NumberFormatting.string(from: fact.a))
+                    .foregroundColor(numberStyle.primaryColor(for: fact.a))
+                Text(")")
+                    .foregroundColor(.secondary)
             } else {
                 Text("\(fact.a)")
                     .foregroundColor(numberStyle.primaryColor(for: fact.a))

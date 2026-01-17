@@ -78,6 +78,7 @@ enum OperationFilter: String, CaseIterable, Identifiable {
     case addition
     case multiplication
     case exponent
+    case sets
 
     var id: String { rawValue }
 
@@ -91,6 +92,8 @@ enum OperationFilter: String, CaseIterable, Identifiable {
             return "Multiply"
         case .exponent:
             return "Exponent"
+        case .sets:
+            return "Sets"
         }
     }
 
@@ -103,7 +106,10 @@ enum OperationFilter: String, CaseIterable, Identifiable {
             if self == .multiplication {
                 return operation == .multiplication
             }
-            return operation == .exponent
+            if self == .exponent {
+                return operation == .exponent
+            }
+            return operation == .sets
         }
         return true
     }
@@ -118,6 +124,8 @@ enum OperationFilter: String, CaseIterable, Identifiable {
             return "x"
         case .exponent:
             return "^"
+        case .sets:
+            return "C"
         }
     }
 }

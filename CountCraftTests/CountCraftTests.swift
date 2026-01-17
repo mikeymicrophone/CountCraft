@@ -18,6 +18,7 @@ struct CountCraftTests {
         #expect(OperationType.exponent.answer(for: MathFact(a: 2, b: 5)) == 32)
         #expect(OperationType.exponent.answer(for: MathFact(a: 5, b: 0)) == 1)
         #expect(OperationType.exponent.answer(for: MathFact(a: 5, b: -1)) == 0)
+        #expect(OperationType.sets.answer(for: MathFact(a: 2, b: 3)) == 6)
     }
 
     @Test func factStatsTracksAccuracyAndMastery() {
@@ -93,6 +94,12 @@ struct CountCraftTests {
         #expect(NumberStyling.color(for: 5, enabled: false) == nil)
         #expect(NumberStyling.color(for: 13, enabled: true) == nil)
         #expect(NumberStyling.color(for: 0, enabled: true) != nil)
+    }
+
+    @Test func combinatoricsChooseSymmetry() {
+        #expect(Combinatorics.choose(n: 8, k: 2) == 28)
+        #expect(Combinatorics.choose(n: 8, k: 6) == 28)
+        #expect(Combinatorics.choose(n: 8, k: 0) == 1)
     }
 }
 

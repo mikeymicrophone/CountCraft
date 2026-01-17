@@ -157,6 +157,8 @@ struct ExplanationNavigationArrows: View {
             return .addition
         case .exponent:
             return .multiplication
+        case .sets:
+            return .exponent
         }
     }
 
@@ -167,6 +169,8 @@ struct ExplanationNavigationArrows: View {
         case .multiplication:
             return .exponent
         case .exponent:
+            return .sets
+        case .sets:
             return nil
         }
     }

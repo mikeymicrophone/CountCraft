@@ -31,6 +31,22 @@ struct ExplanationHeaderView: View {
                     .foregroundColor(numberStyle.primaryColor(for: operation.answer(for: fact)))
                     .font(numberStyle.font(size: 28, weight: .semibold))
             }
+        } else if operation == .sets {
+            HStack(spacing: 4) {
+                Text("C(")
+                    .foregroundColor(.secondary)
+                Text(NumberFormatting.string(from: fact.b + 1))
+                    .foregroundColor(numberStyle.primaryColor(for: fact.b + 1))
+                Text(",")
+                    .foregroundColor(.secondary)
+                Text(NumberFormatting.string(from: fact.a))
+                    .foregroundColor(numberStyle.primaryColor(for: fact.a))
+                Text(") =")
+                    .foregroundColor(.secondary)
+                Text(NumberFormatting.string(from: operation.answer(for: fact)))
+                    .foregroundColor(numberStyle.primaryColor(for: operation.answer(for: fact)))
+            }
+            .font(numberStyle.font(size: 26, weight: .semibold))
         } else {
             HStack(spacing: 8) {
                 Text(NumberFormatting.string(from: fact.a))

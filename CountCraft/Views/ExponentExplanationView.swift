@@ -38,7 +38,8 @@ struct ExponentExplanationView: View {
         let leftValue = valueAtStep(leftExp)
         let rightValue = valueAtStep(rightExp)
         let currentValue = valueAtStep(step)
-        return "\(NumberFormatting.string(from: leftValue)) groups of \(NumberFormatting.string(from: rightValue)) = \(NumberFormatting.string(from: currentValue))"
+        let groupLabel = leftValue == 1 ? "group" : "groups"
+        return "\(NumberFormatting.string(from: leftValue)) \(groupLabel) of \(NumberFormatting.string(from: rightValue)) = \(NumberFormatting.string(from: currentValue))"
     }
 
     private func startPlaying() {

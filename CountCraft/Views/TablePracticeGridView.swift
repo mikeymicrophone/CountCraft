@@ -33,7 +33,7 @@ struct TablePracticeGridView: View {
                             let fact = MathFact(a: row, b: column)
                             let stats = statsByFact[FactKey(a: row, b: column)]
                             let answer = operation.answer(for: fact)
-                            let answerLabel = NumberFormatting.string(from: answer)
+                            let answerLabel = displayLabel(for: operation, answer: answer)
                             let cellFontSize = fontSize(for: answerLabel)
                             Button {
                                 onSelectFact(fact)
@@ -78,5 +78,12 @@ struct TablePracticeGridView: View {
             return 12
         }
         return 10
+    }
+
+    private func displayLabel(for operation: OperationType, answer: Int) -> String {
+        if operation == .sets, answer == 0 {
+            return "∅"
+        }
+        return NumberFormatting.string(from: answer)
     }
 }

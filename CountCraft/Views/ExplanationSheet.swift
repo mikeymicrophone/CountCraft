@@ -27,10 +27,11 @@ struct ExplanationSheet: View {
                     numberStyle: numberStyle
                 )
                 ZStack {
+                    let isWideOperation = operation == .exponent || operation == .sets
                     explanationContent
-                        .frame(maxWidth: operation == .exponent ? .infinity : 520)
-                        .padding(.horizontal, operation == .exponent ? 16 : 24)
-                        .padding(.top, operation == .exponent ? 48 : 28)
+                        .frame(maxWidth: isWideOperation ? .infinity : 520)
+                        .padding(.horizontal, isWideOperation ? 16 : 24)
+                        .padding(.top, isWideOperation ? 48 : 28)
                     ExplanationNavigationArrows(
                         operation: operation,
                         fact: fact,
@@ -40,7 +41,10 @@ struct ExplanationSheet: View {
                         onSwitchOperation: onSwitchOperation
                     )
                 }
-                .frame(maxWidth: .infinity, minHeight: operation == .exponent ? 320 : 280)
+                .frame(
+                    maxWidth: .infinity,
+                    minHeight: operation == .exponent || operation == .sets ? 320 : 280
+                )
             }
             .padding()
         }
@@ -66,6 +70,14 @@ struct ExplanationSheet: View {
         )
     }
 
+    private var setsExplanation: some View {
+        SetExplanationView(
+            setSize: fact.a,
+            maxElement: fact.b,
+            numberStyle: numberStyle
+        )
+    }
+
     private func gridColumns(for value: Int) -> Int {
         max(min(value, 6), 1)
     }
@@ -78,32 +90,44 @@ struct ExplanationSheet: View {
             return AnyView(multiplicationExplanation)
         case .exponent:
             return AnyView(exponentExplanation)
+        case .sets:
+            return AnyView(setsExplanation)
         }
     }
 
     private var multiplicationExplanation: some View {
         VStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("\(NumberFormatting.string(from: fact.a)) Groups of \(NumberFormatting.string(from: fact.b))")
+                Text("\(NumberFormatting.string(from: fact.a)) \(groupLabel(for: fact.a)) of \(NumberFormatting.string(from: fact.b))")
                     .font(numberStyle.font(size: 18, weight: .semibold))
-                LazyVGrid(columns: bankColumns, spacing: 10) {
-                    ForEach(0..<max(fact.a, 1), id: \.self) { index in
-                        FitSquareGrid(
-                            count: fact.b,
-                            columns: gridColumns(for: fact.b),
-                            color: numberStyle.secondaryColor(for: fact.b),
-                            spacing: 4
-                        )
-                        .frame(width: 80, height: 80)
-                        .padding(.vertical, 4)
-                        .padding(.top, index % 2 == 1 ? 16 : 0)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                if fact.a <= 0 {
+                    Text("∅")
+                        .font(numberStyle.font(size: 44, weight: .semibold))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
+                } else {
+                    LazyVGrid(columns: bankColumns, spacing: 10) {
+                        ForEach(0..<fact.a, id: \.self) { index in
+                            FitSquareGrid(
+                                count: fact.b,
+                                columns: gridColumns(for: fact.b),
+                                color: numberStyle.secondaryColor(for: fact.b),
+                                spacing: 4
+                            )
+                            .frame(width: 80, height: 80)
+                            .padding(.vertical, 4)
+                            .padding(.top, index % 2 == 1 ? 16 : 0)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Grid \(NumberFormatting.string(from: fact.a)) × \(NumberFormatting.string(from: fact.b))")
                     .font(numberStyle.font(size: 18, weight: .semibold))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 FitSquareGrid(
                     count: fact.a * fact.b,
                     columns: max(fact.b, 1),
@@ -111,6 +135,7 @@ struct ExplanationSheet: View {
                     spacing: 3
                 )
                 .frame(maxWidth: 260, minHeight: 160)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
             .padding(.bottom, 30)
         }
@@ -133,6 +158,10 @@ struct ExplanationSheet: View {
 
     private var bankColumns: [GridItem] {
         [GridItem(.adaptive(minimum: 70), spacing: 16)]
+    }
+
+    private func groupLabel(for value: Int) -> String {
+        value == 1 ? "Group" : "Groups"
     }
 
     private var numberFontChoice: NumberFontChoice {

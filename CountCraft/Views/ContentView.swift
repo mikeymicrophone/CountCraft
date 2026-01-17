@@ -57,6 +57,19 @@ struct ContentView: View {
                 }
                 .tag(TabSelection.exponent)
 
+            TablePracticeView(
+                operation: .sets,
+                guesses: activeGuesses,
+                profile: selectedProfile,
+                onGuess: recordGuess,
+                onSwitchOperation: switchOperation,
+                pendingExplanation: pendingBinding(for: .sets)
+            )
+                .tabItem {
+                    Label("Sets", systemImage: "square.grid.2x2")
+                }
+                .tag(TabSelection.sets)
+
             ReviewGuessesView(guesses: activeGuesses)
                 .tabItem {
                     Label("Review", systemImage: "list.bullet.rectangle")
@@ -84,6 +97,8 @@ struct ContentView: View {
             selectedTab = .multiplication
         case .exponent:
             selectedTab = .exponent
+        case .sets:
+            selectedTab = .sets
         }
     }
 
@@ -133,6 +148,7 @@ private enum TabSelection: Hashable {
     case addition
     case multiplication
     case exponent
+    case sets
     case review
 }
 

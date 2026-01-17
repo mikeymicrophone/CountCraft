@@ -57,10 +57,12 @@ struct TablePracticeView: View {
                     mastered: statsByFact.values.filter { $0.isMastered }.count,
                     totalFacts: rowValues.count * columnValues.count
                 )
-                TablePracticeControlsView(
-                    answersShown: $answersShown,
-                    inputMode: $inputMode
-                )
+                if operation != .sets {
+                    TablePracticeControlsView(
+                        answersShown: $answersShown,
+                        inputMode: $inputMode
+                    )
+                }
                 TablePracticeGridView(
                     operation: operation,
                     rowValues: rowValues,

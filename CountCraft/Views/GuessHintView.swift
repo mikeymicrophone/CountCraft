@@ -20,6 +20,8 @@ struct GuessHintView: View {
             expandedMultiplicationView
         case .addition:
             expandedAdditionView
+        case .sets:
+            EmptyView()
         }
     }
 
