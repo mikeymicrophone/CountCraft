@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import SceneKit
 
 struct ExplanationSheet: View {
     let operation: OperationType
@@ -372,7 +373,7 @@ struct ExponentExplanationView: View {
     }
 
     private var maxStep: Int {
-        max(exponent, 1)
+        min(max(exponent, 1), 3)
     }
 
     private func valueAtStep(_ step: Int) -> Int {
@@ -441,7 +442,7 @@ struct ExponentExplanationView: View {
             }
             .padding(.horizontal)
 
-            ExponentRasterView(base: base, depth: step, color: color)
+            ExponentSceneView(base: base, depth: step, color: color)
                 .frame(maxWidth: .infinity, minHeight: 280)
                 .animation(.easeInOut(duration: 0.2), value: step)
                 .padding(.bottom, 30)
@@ -610,4 +611,87 @@ struct ExponentRasterView: View {
         cache.countLimit = 32
         return cache
     }()
+}
+
+struct ExponentSceneView: View {
+    let base: Int
+    let depth: Int
+    let color: Color
+
+    var body: some View {
+        SceneView(scene: scene, options: [.autoenablesDefaultLighting])
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var scene: SCNScene {
+        let scene = SCNScene()
+        let root = scene.rootNode
+        let container = SCNNode()
+        root.addChildNode(container)
+
+        let cubeSize: CGFloat = 0.8
+        let spacing: CGFloat = 0.22
+        let step = cubeSize + spacing
+        let extent = max(base, 1)
+        let material = SCNMaterial()
+        material.diffuse.contents = UIColor(color).withAlphaComponent(0.9)
+        material.lightingModel = .lambert
+
+        let box = SCNBox(width: cubeSize, height: cubeSize, length: cubeSize, chamferRadius: 0)
+        box.materials = [material]
+
+        let zRange = depth >= 3 ? 0..<extent : 0..<1
+        let yRange = depth >= 2 ? 0..<extent : 0..<1
+        let xRange = 0..<extent
+
+        for z in zRange {
+            for y in yRange {
+                for x in xRange {
+                    let node = SCNNode(geometry: box)
+                    node.position = SCNVector3(
+                        Float(CGFloat(x) * step),
+                        Float(CGFloat(y) * step),
+                        Float(CGFloat(z) * step)
+                    )
+                    container.addChildNode(node)
+                }
+            }
+        }
+
+        let bounds = container.boundingBox
+        let minBounds = bounds.min
+        let maxBounds = bounds.max
+        let center = SCNVector3(
+            (minBounds.x + maxBounds.x) / 2,
+            (minBounds.y + maxBounds.y) / 2,
+            (minBounds.z + maxBounds.z) / 2
+        )
+        container.position = SCNVector3(-center.x, -center.y, -center.z)
+
+        let cameraNode = SCNNode()
+        cameraNode.camera = SCNCamera()
+        cameraNode.camera?.fieldOfView = 50
+        let maxDimension = max(
+            max(maxBounds.x - minBounds.x, maxBounds.y - minBounds.y),
+            maxBounds.z - minBounds.z
+        )
+        cameraNode.position = SCNVector3(0, 0, Float(maxDimension * 2.4))
+        root.addChildNode(cameraNode)
+
+        let lightNode = SCNNode()
+        lightNode.light = SCNLight()
+        lightNode.light?.type = .omni
+        lightNode.position = SCNVector3(Float(maxDimension), Float(maxDimension), Float(maxDimension))
+        root.addChildNode(lightNode)
+
+        if depth >= 3 {
+            let rotate = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 16)
+            container.runAction(SCNAction.repeatForever(rotate))
+        } else {
+            container.eulerAngles = SCNVector3(-0.35, 0.45, 0)
+        }
+
+        return scene
+    }
 }
