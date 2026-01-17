@@ -373,7 +373,7 @@ struct ExponentExplanationView: View {
     }
 
     private var maxStep: Int {
-        min(max(exponent, 1), 3)
+        min(max(exponent, 1), 12)
     }
 
     private func valueAtStep(_ step: Int) -> Int {
@@ -443,7 +443,7 @@ struct ExponentExplanationView: View {
             .padding(.horizontal)
 
             ExponentSceneView(base: base, depth: step, color: color)
-                .frame(maxWidth: .infinity, minHeight: 280)
+                .frame(maxWidth: .infinity, minHeight: 476)
                 .animation(.easeInOut(duration: 0.2), value: step)
                 .padding(.bottom, 30)
         }
@@ -619,12 +619,26 @@ struct ExponentSceneView: View {
     let color: Color
 
     var body: some View {
-        SceneView(scene: scene, options: [.autoenablesDefaultLighting])
+        let bundle = buildScene()
+        return SceneView(scene: bundle.scene, pointOfView: bundle.cameraNode, options: sceneOptions)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    private var scene: SCNScene {
+    private var sceneOptions: SceneView.Options {
+        var options: SceneView.Options = [.autoenablesDefaultLighting]
+        if (4...7).contains(depth) {
+            options.insert(.allowsCameraControl)
+        }
+        return options
+    }
+
+    private struct SceneBundle {
+        let scene: SCNScene
+        let cameraNode: SCNNode
+    }
+
+    private func buildScene() -> SceneBundle {
         let scene = SCNScene()
         let root = scene.rootNode
         let container = SCNNode()
@@ -634,29 +648,33 @@ struct ExponentSceneView: View {
         let spacing: CGFloat = 0.22
         let step = cubeSize + spacing
         let extent = max(base, 1)
-        let material = SCNMaterial()
-        material.diffuse.contents = UIColor(color).withAlphaComponent(0.9)
-        material.lightingModel = .lambert
-
+        let baseColor = UIColor(color).withAlphaComponent(0.9)
+        let materials = tintedMaterials(baseColor: baseColor, count: extent)
         let box = SCNBox(width: cubeSize, height: cubeSize, length: cubeSize, chamferRadius: 0)
-        box.materials = [material]
 
-        let zRange = depth >= 3 ? 0..<extent : 0..<1
-        let yRange = depth >= 2 ? 0..<extent : 0..<1
-        let xRange = 0..<extent
-
-        for z in zRange {
-            for y in yRange {
-                for x in xRange {
-                    let node = SCNNode(geometry: box)
-                    node.position = SCNVector3(
-                        Float(CGFloat(x) * step),
-                        Float(CGFloat(y) * step),
-                        Float(CGFloat(z) * step)
-                    )
-                    container.addChildNode(node)
-                }
-            }
+        if (4...9).contains(depth) {
+            buildAnimatedExponentScene(
+                depth: depth,
+                extent: extent,
+                step: step,
+                spacing: spacing,
+                box: box,
+                materials: materials,
+                container: container,
+                root: root
+            )
+        } else {
+            let groupSpacing = spacing * 3
+            placeBlocks(
+                depth: depth,
+                origin: SCNVector3(0, 0, 0),
+                step: step,
+                groupSpacing: groupSpacing,
+                extent: extent,
+                box: box,
+                materials: materials,
+                container: container
+            )
         }
 
         let bounds = container.boundingBox
@@ -672,11 +690,14 @@ struct ExponentSceneView: View {
         let cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
         cameraNode.camera?.fieldOfView = 50
+        cameraNode.camera?.automaticallyAdjustsZRange = true
         let maxDimension = max(
             max(maxBounds.x - minBounds.x, maxBounds.y - minBounds.y),
             maxBounds.z - minBounds.z
         )
         cameraNode.position = SCNVector3(0, 0, Float(maxDimension * 2.4))
+        cameraNode.camera?.zNear = 0.01
+        cameraNode.camera?.zFar = Double(maxDimension * 20.0)
         root.addChildNode(cameraNode)
 
         let lightNode = SCNNode()
@@ -685,13 +706,351 @@ struct ExponentSceneView: View {
         lightNode.position = SCNVector3(Float(maxDimension), Float(maxDimension), Float(maxDimension))
         root.addChildNode(lightNode)
 
-        if depth >= 3 {
-            let rotate = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 16)
-            container.runAction(SCNAction.repeatForever(rotate))
-        } else {
-            container.eulerAngles = SCNVector3(-0.35, 0.45, 0)
+        let phase = ((depth - 1) % 3) + 1
+        if !(4...7).contains(depth) {
+            if phase == 3 {
+                let rotate = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 16)
+                container.runAction(SCNAction.repeatForever(rotate))
+            } else {
+                container.eulerAngles = SCNVector3(-0.35, 0.45, 0)
+            }
         }
 
-        return scene
+        return SceneBundle(scene: scene, cameraNode: cameraNode)
+    }
+
+    private func tintIndex(x: Int, y: Int, z: Int, extent: Int) -> Int {
+        guard extent > 1 else { return 0 }
+        let mix = (x + y + z) % extent
+        return mix
+    }
+
+    private func tintedMaterials(baseColor: UIColor, count: Int) -> [SCNMaterial] {
+        let safeCount = max(count, 1)
+        return (0..<safeCount).map { index in
+            let material = SCNMaterial()
+            material.diffuse.contents = baseColor.adjustedBrightness(factor: tintFactor(index: index, count: safeCount))
+            material.lightingModel = .lambert
+            return material
+        }
+    }
+
+    private func tintFactor(index: Int, count: Int) -> CGFloat {
+        guard count > 1 else { return 1.0 }
+        let ratio = CGFloat(index) / CGFloat(count - 1)
+        return 0.7 + (ratio * 0.4)
+    }
+
+    private func buildAnimatedExponentScene(
+        depth: Int,
+        extent: Int,
+        step: CGFloat,
+        spacing: CGFloat,
+        box: SCNBox,
+        materials: [SCNMaterial],
+        container: SCNNode,
+        root: SCNNode
+    ) {
+        let detailContainer = SCNNode()
+        let groupsContainer = SCNNode()
+        container.addChildNode(detailContainer)
+        container.addChildNode(groupsContainer)
+
+        placeBlocks(
+            depth: 3,
+            origin: SCNVector3(0, 0, 0),
+            step: step,
+            groupSpacing: spacing * 3,
+            extent: extent,
+            box: box,
+            materials: materials,
+            container: detailContainer
+        )
+        let detailBounds = detailContainer.boundingBox
+        let detailMin = detailBounds.min
+        let detailMax = detailBounds.max
+        let detailCenter = SCNVector3(
+            (detailMin.x + detailMax.x) / 2,
+            (detailMin.y + detailMax.y) / 2,
+            (detailMin.z + detailMax.z) / 2
+        )
+        detailContainer.position = SCNVector3(-detailCenter.x, -detailCenter.y, -detailCenter.z)
+
+        let groupGap = spacing * 4
+        let groupSpan = CGFloat(extent - 1) * step + (box.width)
+        let groupStep = groupSpan + groupGap
+
+        let xCount = extent
+        let yCount = depth >= 5 ? extent : 1
+        let zCount = depth >= 6 ? extent : 1
+        let fullSpanX = groupSpan + CGFloat(max(xCount - 1, 0)) * groupStep
+        let fullSpanY = groupSpan + CGFloat(max(yCount - 1, 0)) * groupStep
+        let fullSpanZ = groupSpan + CGFloat(max(zCount - 1, 0)) * groupStep
+        let fullSpan = max(fullSpanX, fullSpanY, fullSpanZ)
+        let cubeSpan = fullSpan
+        let cubeCenter = SCNVector3(
+            Float(CGFloat(max(xCount - 1, 0)) * groupStep / 2),
+            Float(CGFloat(max(yCount - 1, 0)) * groupStep / 2),
+            Float(CGFloat(max(zCount - 1, 0)) * groupStep / 2)
+        )
+
+        let groupMaterial = SCNMaterial()
+        groupMaterial.diffuse.contents = UIColor(color).withAlphaComponent(0.85)
+        groupMaterial.lightingModel = .lambert
+        groupMaterial.writesToDepthBuffer = false
+        groupMaterial.readsFromDepthBuffer = true
+        groupMaterial.transparencyMode = .aOne
+
+        let groupBox = SCNBox(width: groupSpan, height: groupSpan, length: groupSpan, chamferRadius: 0)
+        groupBox.materials = [groupMaterial]
+
+        groupsContainer.renderingOrder = 10
+
+        for z in 0..<zCount {
+            for y in 0..<yCount {
+                for x in 0..<xCount {
+                    if x == 0 && y == 0 && z == 0 { continue }
+                    let node = SCNNode(geometry: groupBox)
+                    node.position = SCNVector3(
+                        Float(CGFloat(x) * groupStep),
+                        Float(CGFloat(y) * groupStep),
+                        Float(CGFloat(z) * groupStep)
+                    )
+                    groupsContainer.addChildNode(node)
+                }
+            }
+        }
+
+        var outerSpan: CGFloat = cubeSpan
+        var outerCenter = cubeCenter
+
+        if depth >= 7 {
+            let outerContainer = SCNNode()
+            container.addChildNode(outerContainer)
+
+            let outerMaterial = SCNMaterial()
+            outerMaterial.diffuse.contents = UIColor(color).withAlphaComponent(0.85)
+            outerMaterial.lightingModel = .lambert
+            outerMaterial.writesToDepthBuffer = false
+            outerMaterial.readsFromDepthBuffer = true
+            outerMaterial.transparencyMode = .aOne
+
+            let outerBox = SCNBox(
+                width: cubeSpan,
+                height: cubeSpan,
+                length: cubeSpan,
+                chamferRadius: 0
+            )
+            outerBox.materials = [outerMaterial]
+
+            outerContainer.renderingOrder = 20
+
+            let outerStep = cubeSpan + groupGap
+            let outerX = extent
+            let outerY = depth >= 8 ? extent : 1
+            let outerZ = depth >= 9 ? extent : 1
+            let outerSpanX = cubeSpan + CGFloat(max(outerX - 1, 0)) * outerStep
+            let outerSpanY = cubeSpan + CGFloat(max(outerY - 1, 0)) * outerStep
+            let outerSpanZ = cubeSpan + CGFloat(max(outerZ - 1, 0)) * outerStep
+            outerSpan = max(outerSpanX, outerSpanY, outerSpanZ)
+            outerCenter = SCNVector3(
+                cubeCenter.x + Float(CGFloat(max(outerX - 1, 0)) * outerStep / 2),
+                cubeCenter.y + Float(CGFloat(max(outerY - 1, 0)) * outerStep / 2),
+                cubeCenter.z + Float(CGFloat(max(outerZ - 1, 0)) * outerStep / 2)
+            )
+
+            for z in 0..<outerZ {
+                for y in 0..<outerY {
+                    for x in 0..<outerX {
+                        if x == 0 && y == 0 && z == 0 { continue }
+                        let node = SCNNode(geometry: outerBox)
+                        node.position = SCNVector3(
+                            cubeCenter.x + Float(CGFloat(x) * outerStep),
+                            cubeCenter.y + Float(CGFloat(y) * outerStep),
+                            cubeCenter.z + Float(CGFloat(z) * outerStep)
+                        )
+                        outerContainer.addChildNode(node)
+                    }
+                }
+            }
+            outerContainer.opacity = 0
+            let outerFade = SCNAction.sequence([SCNAction.wait(duration: 1.8), SCNAction.fadeIn(duration: 1.0)])
+            outerContainer.runAction(outerFade)
+        }
+
+        let combinedBounds = container.boundingBox
+        let minBounds = combinedBounds.min
+        let maxBounds = combinedBounds.max
+        let center = SCNVector3(
+            (minBounds.x + maxBounds.x) / 2,
+            (minBounds.y + maxBounds.y) / 2,
+            (minBounds.z + maxBounds.z) / 2
+        )
+        // For depth 7+, center on the detail cube initially (camera will pan to show outer container later)
+        if depth >= 7 {
+            container.position = SCNVector3(-detailCenter.x, -detailCenter.y, -detailCenter.z)
+        } else {
+            container.position = SCNVector3(-center.x, -center.y, -center.z)
+        }
+
+        let detailSpan = max(
+            max(detailMax.x - detailMin.x, detailMax.y - detailMin.y),
+            detailMax.z - detailMin.z
+        )
+        let cameraNode = SCNNode()
+        cameraNode.camera = SCNCamera()
+        cameraNode.camera?.fieldOfView = 50
+        cameraNode.position = SCNVector3(0, 0, Float(detailSpan * 2.2))
+        root.addChildNode(cameraNode)
+
+        let targetNode = SCNNode()
+        targetNode.position = SCNVector3(0, 0, 0)
+        root.addChildNode(targetNode)
+        cameraNode.constraints = [SCNLookAtConstraint(target: targetNode)]
+
+        groupsContainer.opacity = 0
+        let wait = SCNAction.wait(duration: 0.8)
+        let fadeIn = SCNAction.fadeIn(duration: 1.0)
+        groupsContainer.runAction(SCNAction.sequence([wait, fadeIn]))
+
+        let zoomOut: SCNAction
+        if depth >= 7 {
+            let targetFirst = SCNVector3(cubeCenter.x, cubeCenter.y, cubeCenter.z)
+            let moveTarget = SCNAction.move(to: targetFirst, duration: 1.2)
+            moveTarget.timingMode = SCNActionTimingMode.easeInEaseOut
+            targetNode.runAction(SCNAction.sequence([wait, moveTarget]))
+
+            zoomOut = SCNAction.move(
+                to: SCNVector3(targetFirst.x, targetFirst.y, Float(cubeSpan * 2.4)),
+                duration: 1.2
+            )
+        } else {
+            zoomOut = SCNAction.move(
+                to: SCNVector3(0, 0, Float(fullSpan * 2.4)),
+                duration: 1.2
+            )
+        }
+        zoomOut.timingMode = SCNActionTimingMode.easeInEaseOut
+
+        if depth >= 7 {
+            let extraSpan: Float = max(Float(cubeSpan), Float(outerSpan))
+            let targetSecond = outerCenter
+            let secondTarget = SCNAction.move(to: targetSecond, duration: 1.1)
+            secondTarget.timingMode = SCNActionTimingMode.easeInEaseOut
+            targetNode.runAction(SCNAction.sequence([wait, zoomOut, SCNAction.wait(duration: 0.6), secondTarget]))
+
+            let secondZoom = SCNAction.move(
+                to: SCNVector3(targetSecond.x, targetSecond.y, Float(extraSpan * 2.0)),
+                duration: 1.1
+            )
+            secondZoom.timingMode = SCNActionTimingMode.easeInEaseOut
+            cameraNode.runAction(SCNAction.sequence([wait, zoomOut, SCNAction.wait(duration: 0.6), secondZoom]))
+        } else {
+            cameraNode.runAction(SCNAction.sequence([wait, zoomOut]))
+        }
+    }
+
+    private struct BlockExtent {
+        let x: Int
+        let y: Int
+        let z: Int
+    }
+
+    private func extentForDepth(_ depth: Int, extent: Int) -> BlockExtent {
+        let safeExtent = max(extent, 1)
+        if depth <= 1 {
+            return BlockExtent(x: safeExtent, y: 1, z: 1)
+        }
+        if depth == 2 {
+            return BlockExtent(x: safeExtent, y: safeExtent, z: 1)
+        }
+        if depth == 3 {
+            return BlockExtent(x: safeExtent, y: safeExtent, z: safeExtent)
+        }
+        let phase = ((depth - 1) % 3) + 1
+        let sub = extentForDepth(depth - 3, extent: extent)
+        let x = safeExtent * sub.x
+        let y = (phase >= 2 ? safeExtent * sub.y : sub.y)
+        let z = (phase == 3 ? safeExtent * sub.z : sub.z)
+        return BlockExtent(x: x, y: y, z: z)
+    }
+
+    private func placeBlocks(
+        depth: Int,
+        origin: SCNVector3,
+        step: CGFloat,
+        groupSpacing: CGFloat,
+        extent: Int,
+        box: SCNBox,
+        materials: [SCNMaterial],
+        container: SCNNode
+    ) {
+        let safeExtent = max(extent, 1)
+        if depth <= 3 {
+            let zRange = depth == 3 ? 0..<safeExtent : 0..<1
+            let yRange = depth >= 2 ? 0..<safeExtent : 0..<1
+            let xRange = 0..<safeExtent
+
+            for z in zRange {
+                for y in yRange {
+                    for x in xRange {
+                        let node = SCNNode(geometry: box)
+                        node.geometry?.materials = [materials[tintIndex(x: x, y: y, z: z, extent: safeExtent)]]
+                        node.position = SCNVector3(
+                            origin.x + Float(CGFloat(x) * step),
+                            origin.y + Float(CGFloat(y) * step),
+                            origin.z + Float(CGFloat(z) * step)
+                        )
+                        container.addChildNode(node)
+                    }
+                }
+            }
+            return
+        }
+
+        let phase = ((depth - 1) % 3) + 1
+        let subExtent = extentForDepth(depth - 3, extent: extent)
+        let subSizeX = CGFloat(subExtent.x) * step + groupSpacing
+        let subSizeY = CGFloat(subExtent.y) * step + groupSpacing
+        let subSizeZ = CGFloat(subExtent.z) * step + groupSpacing
+
+        let zCount = phase == 3 ? safeExtent : 1
+        let yCount = phase >= 2 ? safeExtent : 1
+        let xCount = safeExtent
+
+        for z in 0..<zCount {
+            for y in 0..<yCount {
+                for x in 0..<xCount {
+                    let offset = SCNVector3(
+                        Float(CGFloat(x) * subSizeX),
+                        Float(CGFloat(y) * subSizeY),
+                        Float(CGFloat(z) * subSizeZ)
+                    )
+                    placeBlocks(
+                        depth: depth - 3,
+                        origin: SCNVector3(origin.x + offset.x, origin.y + offset.y, origin.z + offset.z),
+                        step: step,
+                        groupSpacing: groupSpacing,
+                        extent: extent,
+                        box: box,
+                        materials: materials,
+                        container: container
+                    )
+                }
+            }
+        }
+    }
+}
+
+private extension UIColor {
+    func adjustedBrightness(factor: CGFloat) -> UIColor {
+        var hue: CGFloat = 0
+        var saturation: CGFloat = 0
+        var brightness: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else {
+            return self
+        }
+        return UIColor(hue: hue, saturation: saturation, brightness: min(max(brightness * factor, 0.05), 1.0), alpha: alpha)
     }
 }
