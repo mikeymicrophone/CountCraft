@@ -23,11 +23,11 @@ struct ExplanationSheet: View {
                 headerView
                 ZStack {
                     explanationContent
-                        .frame(maxWidth: 520)
-                        .padding(.horizontal, 24)
+                        .frame(maxWidth: operation == .exponent ? .infinity : 520)
+                        .padding(.horizontal, operation == .exponent ? 16 : 24)
                     navigationArrows
                 }
-                .frame(maxWidth: .infinity, minHeight: 280)
+                .frame(maxWidth: .infinity, minHeight: operation == .exponent ? 360 : 280)
             }
             .padding()
         }
@@ -313,7 +313,7 @@ struct ExponentExplanationView: View {
 
             RecursiveExponentShape(base: base, depth: currentStep)
                 .fill(color.opacity(0.85))
-                .frame(maxWidth: 300, maxHeight: 200)
+                .frame(maxWidth: .infinity, minHeight: 280)
                 .animation(.easeInOut(duration: 0.4), value: currentStep)
                 .padding(.bottom, 30)
         }
@@ -345,20 +345,20 @@ struct RecursiveExponentShape: Shape {
 
     private func drawRecursive(in rect: CGRect, depth: Int, path: inout Path) {
         if depth <= 1 {
-            // Base case: draw `base` squares in a row
             drawBaseSquares(in: rect, path: &path)
         } else {
-            // Recursive case: draw `base` copies of the previous depth
             drawNestedGroups(in: rect, depth: depth, path: &path)
         }
     }
 
     private func drawBaseSquares(in rect: CGRect, path: inout Path) {
+        // Depth 1 is always horizontal
         let count = base
-        let spacing: CGFloat = rect.width * 0.08
-        let totalSpacing = spacing * CGFloat(count - 1)
-        let squareSize = min((rect.width - totalSpacing) / CGFloat(count), rect.height)
-        let totalWidth = CGFloat(count) * squareSize + totalSpacing
+        let spacingRatio: CGFloat = 0.06
+        let totalSpacingRatio = spacingRatio * CGFloat(count - 1)
+        let squareSize = min(rect.width / (CGFloat(count) + totalSpacingRatio * CGFloat(count)), rect.height)
+        let spacing = squareSize * spacingRatio
+        let totalWidth = CGFloat(count) * squareSize + spacing * CGFloat(count - 1)
         let startX = rect.midX - totalWidth / 2
         let startY = rect.midY - squareSize / 2
         let cornerRadius = squareSize * 0.15
@@ -371,26 +371,30 @@ struct RecursiveExponentShape: Shape {
     }
 
     private func drawNestedGroups(in rect: CGRect, depth: Int, path: inout Path) {
-        // Arrange `base` groups in a grid layout
-        let cols = min(base, 4)
-        let rows = Int(ceil(Double(base) / Double(cols)))
+        // Alternate: even depth = vertical stacking, odd depth = horizontal stacking
+        let isVertical = depth % 2 == 0
+        let spacingRatio: CGFloat = 0.04
 
-        let groupSpacingRatio: CGFloat = 0.12
-        let horizontalSpacing = rect.width * groupSpacingRatio / CGFloat(cols)
-        let verticalSpacing = rect.height * groupSpacingRatio / CGFloat(rows)
+        if isVertical {
+            // Stack groups vertically
+            let spacing = rect.height * spacingRatio
+            let groupHeight = (rect.height - spacing * CGFloat(base - 1)) / CGFloat(base)
 
-        let groupWidth = (rect.width - horizontalSpacing * CGFloat(cols - 1)) / CGFloat(cols)
-        let groupHeight = (rect.height - verticalSpacing * CGFloat(rows - 1)) / CGFloat(rows)
+            for i in 0..<base {
+                let y = rect.minY + CGFloat(i) * (groupHeight + spacing)
+                let groupRect = CGRect(x: rect.minX, y: y, width: rect.width, height: groupHeight)
+                drawRecursive(in: groupRect, depth: depth - 1, path: &path)
+            }
+        } else {
+            // Stack groups horizontally
+            let spacing = rect.width * spacingRatio
+            let groupWidth = (rect.width - spacing * CGFloat(base - 1)) / CGFloat(base)
 
-        for i in 0..<base {
-            let col = i % cols
-            let row = i / cols
-
-            let x = rect.minX + CGFloat(col) * (groupWidth + horizontalSpacing)
-            let y = rect.minY + CGFloat(row) * (groupHeight + verticalSpacing)
-
-            let groupRect = CGRect(x: x, y: y, width: groupWidth, height: groupHeight)
-            drawRecursive(in: groupRect, depth: depth - 1, path: &path)
+            for i in 0..<base {
+                let x = rect.minX + CGFloat(i) * (groupWidth + spacing)
+                let groupRect = CGRect(x: x, y: rect.minY, width: groupWidth, height: rect.height)
+                drawRecursive(in: groupRect, depth: depth - 1, path: &path)
+            }
         }
     }
 }
