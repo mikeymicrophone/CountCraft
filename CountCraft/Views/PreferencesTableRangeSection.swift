@@ -30,20 +30,22 @@ struct PreferencesTableRangeSection: View {
                 lowerValue: axisMinXBinding,
                 upperValue: axisMaxXBinding,
                 bounds: 0...12,
-                showsTickLabels: true
-            ) {
+                onReset: {
                 onResetX()
-            }
+            },
+                showsTickLabels: true
+            )
 
             RangeSlider(
                 label: "Y:",
                 lowerValue: axisMinYBinding,
                 upperValue: axisMaxYBinding,
                 bounds: 0...12,
-                showsTickLabels: true
-            ) {
+                onReset: {
                 onResetY()
-            }
+            },
+                showsTickLabels: true
+            )
         }
     }
 }

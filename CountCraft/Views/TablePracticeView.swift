@@ -12,6 +12,7 @@ struct TablePracticeView: View {
     private let guesses: [PracticeGuess]
     private let profile: Profile?
     private let onGuess: (PracticeGuess) -> Void
+    private let onSwitchOperation: ((OperationType) -> Void)?
 
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
@@ -30,12 +31,14 @@ struct TablePracticeView: View {
         operation: OperationType,
         guesses: [PracticeGuess],
         profile: Profile?,
-        onGuess: @escaping (PracticeGuess) -> Void
+        onGuess: @escaping (PracticeGuess) -> Void,
+        onSwitchOperation: ((OperationType) -> Void)? = nil
     ) {
         self.operation = operation
         self.guesses = guesses
         self.profile = profile
         self.onGuess = onGuess
+        self.onSwitchOperation = onSwitchOperation
         _axisMinX = AppStorage(wrappedValue: 0, "prefAxisMinX-\(operation.rawValue)")
         _axisMaxX = AppStorage(wrappedValue: 12, "prefAxisMaxX-\(operation.rawValue)")
         _axisMinY = AppStorage(wrappedValue: 0, "prefAxisMinY-\(operation.rawValue)")
@@ -98,6 +101,12 @@ struct TablePracticeView: View {
                         columnValues: columnValues,
                         onNavigate: { newFact in
                             activeSheet = TableSheetItem(fact: newFact, mode: .explain)
+                        },
+                        onSwitchOperation: onSwitchOperation.map { switchOperation in
+                            { target in
+                                activeSheet = nil
+                                switchOperation(target)
+                            }
                         }
                     )
                 }

@@ -13,43 +13,51 @@ struct ContentView: View {
     @Query(sort: \PracticeGuess.timestamp, order: .forward) private var guesses: [PracticeGuess]
     @Query(sort: \Profile.name, order: .forward) private var profiles: [Profile]
     @AppStorage("selectedProfileId") private var selectedProfileId = ""
+    @State private var selectedTab: TabSelection = .addition
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             TablePracticeView(
                 operation: .addition,
                 guesses: activeGuesses,
                 profile: selectedProfile,
-                onGuess: recordGuess
+                onGuess: recordGuess,
+                onSwitchOperation: switchOperation
             )
                 .tabItem {
                     Label("Addition", systemImage: "plus")
                 }
+                .tag(TabSelection.addition)
 
             TablePracticeView(
                 operation: .multiplication,
                 guesses: activeGuesses,
                 profile: selectedProfile,
-                onGuess: recordGuess
+                onGuess: recordGuess,
+                onSwitchOperation: switchOperation
             )
                 .tabItem {
                     Label("Multiply", systemImage: "multiply")
                 }
+                .tag(TabSelection.multiplication)
 
             TablePracticeView(
                 operation: .exponent,
                 guesses: activeGuesses,
                 profile: selectedProfile,
-                onGuess: recordGuess
+                onGuess: recordGuess,
+                onSwitchOperation: switchOperation
             )
                 .tabItem {
                     Label("Exponents", systemImage: "function")
                 }
+                .tag(TabSelection.exponent)
 
             ReviewGuessesView(guesses: activeGuesses)
                 .tabItem {
                     Label("Review", systemImage: "list.bullet.rectangle")
                 }
+                .tag(TabSelection.review)
         }
         .onAppear(perform: ensureProfileSelection)
         .onChange(of: profiles) { _, _ in
@@ -60,6 +68,17 @@ struct ContentView: View {
     private func recordGuess(_ guess: PracticeGuess) {
         withAnimation {
             modelContext.insert(guess)
+        }
+    }
+
+    private func switchOperation(_ operation: OperationType) {
+        switch operation {
+        case .addition:
+            selectedTab = .addition
+        case .multiplication:
+            selectedTab = .multiplication
+        case .exponent:
+            selectedTab = .exponent
         }
     }
 
@@ -90,6 +109,13 @@ struct ContentView: View {
             selectedProfileId = first.id.uuidString
         }
     }
+}
+
+private enum TabSelection: Hashable {
+    case addition
+    case multiplication
+    case exponent
+    case review
 }
 
 #Preview {

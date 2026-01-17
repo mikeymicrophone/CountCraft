@@ -35,6 +35,38 @@ struct ExplanationNavigationArrows: View {
                 .position(x: width / 2, y: height - 8)
 
                 arrowButton(
+                    systemName: "arrow.up.left",
+                    enabled: canMove(rowDelta: -1, colDelta: -1)
+                ) {
+                    move(rowDelta: -1, colDelta: -1)
+                }
+                .position(x: 24, y: 24)
+
+                arrowButton(
+                    systemName: "arrow.up.right",
+                    enabled: canMove(rowDelta: -1, colDelta: 1)
+                ) {
+                    move(rowDelta: -1, colDelta: 1)
+                }
+                .position(x: width - 24, y: 24)
+
+                arrowButton(
+                    systemName: "arrow.down.left",
+                    enabled: canMove(rowDelta: 1, colDelta: -1)
+                ) {
+                    move(rowDelta: 1, colDelta: -1)
+                }
+                .position(x: 24, y: height - 24)
+
+                arrowButton(
+                    systemName: "arrow.down.right",
+                    enabled: canMove(rowDelta: 1, colDelta: 1)
+                ) {
+                    move(rowDelta: 1, colDelta: 1)
+                }
+                .position(x: width - 24, y: height - 24)
+
+                arrowButton(
                     systemName: "arrow.left",
                     enabled: canMove(rowDelta: 0, colDelta: -1)
                 ) {

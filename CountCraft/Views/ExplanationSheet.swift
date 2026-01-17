@@ -13,6 +13,7 @@ struct ExplanationSheet: View {
     let rowValues: [Int]
     let columnValues: [Int]
     let onNavigate: (MathFact) -> Void
+    let onSwitchOperation: ((OperationType) -> Void)?
 
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
@@ -25,6 +26,12 @@ struct ExplanationSheet: View {
                     fact: fact,
                     numberStyle: numberStyle
                 )
+                if let onSwitchOperation {
+                    ExplanationOperationArrows(
+                        currentOperation: operation,
+                        onSelect: onSwitchOperation
+                    )
+                }
                 ZStack {
                     explanationContent
                         .frame(maxWidth: operation == .exponent ? .infinity : 520)

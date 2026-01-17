@@ -34,10 +34,10 @@ struct ExponentSceneView: View {
             .onAppear {
                 scheduleCameraControlIfNeeded()
             }
-            .onChange(of: base) { _ in
+            .onChange(of: base) { _, _ in
                 rebuildScene()
             }
-            .onChange(of: depth) { _ in
+            .onChange(of: depth) { _, _ in
                 rebuildScene()
             }
     }

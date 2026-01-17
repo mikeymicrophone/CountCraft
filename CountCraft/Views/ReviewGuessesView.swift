@@ -91,8 +91,7 @@ struct ReviewGuessesView: View {
                     lowerValue: filter == .a ? $viewModel.operandMinA : $viewModel.operandMinB,
                     upperValue: filter == .a ? $viewModel.operandMaxA : $viewModel.operandMaxB,
                     bounds: 0...12,
-                    showsTickLabels: true
-                ) {
+                    onReset: {
                     if filter == .a {
                         viewModel.operandMinA = 0
                         viewModel.operandMaxA = 12
@@ -100,7 +99,9 @@ struct ReviewGuessesView: View {
                         viewModel.operandMinB = 0
                         viewModel.operandMaxB = 12
                     }
-                }
+                },
+                    showsTickLabels: true
+                )
                 .padding(.horizontal)
 
                 Spacer()

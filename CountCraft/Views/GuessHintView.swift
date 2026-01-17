@@ -105,13 +105,17 @@ struct GuessHintView: View {
         color: Color
     ) -> Text {
         guard count > 0 else { return Text("0").foregroundColor(.secondary) }
-        var text = Text("")
+        var result = AttributedString()
         for index in 0..<count {
             if index > 0 {
-                text = text + Text(separator).foregroundColor(.secondary)
+                var separatorText = AttributedString(separator)
+                separatorText.foregroundColor = .secondary
+                result.append(separatorText)
             }
-            text = text + Text(value).foregroundColor(color)
+            var valueText = AttributedString(value)
+            valueText.foregroundColor = color
+            result.append(valueText)
         }
-        return text
+        return Text(result)
     }
 }
