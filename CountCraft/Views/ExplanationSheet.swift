@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ExplanationSheet: View {
     let operation: OperationType
@@ -25,6 +26,7 @@ struct ExplanationSheet: View {
                     explanationContent
                         .frame(maxWidth: operation == .exponent ? .infinity : 520)
                         .padding(.horizontal, operation == .exponent ? 16 : 24)
+                        .padding(.top, 18)
                     navigationArrows
                 }
                 .frame(maxWidth: .infinity, minHeight: operation == .exponent ? 360 : 280)
@@ -238,6 +240,8 @@ struct FitSquareGrid: View {
     var spacing: CGFloat = 4
     var minSize: CGFloat = 8
     var maxSize: CGFloat = 20
+    var maxRenderCells: Int = 4000
+    @State private var cachedImage: UIImage?
 
     var body: some View {
         if count <= 0 {
@@ -246,28 +250,110 @@ struct FitSquareGrid: View {
                 .foregroundColor(.secondary)
         } else {
             GeometryReader { proxy in
-                let cols = max(columns, 1)
-                let rows = max(Int(ceil(Double(count) / Double(cols))), 1)
+                let groupSize = max(1, Int(ceil(Double(count) / Double(maxRenderCells))))
+                let displayedCount = Int(ceil(Double(count) / Double(groupSize)))
+                let cols = max(min(columns, displayedCount), 1)
+                let rows = max(Int(ceil(Double(displayedCount) / Double(cols))), 1)
                 let width = proxy.size.width
                 let height = proxy.size.height
                 let sizeByWidth = (width - CGFloat(cols - 1) * spacing) / CGFloat(cols)
                 let sizeByHeight = (height - CGFloat(rows - 1) * spacing) / CGFloat(rows)
                 let size = min(maxSize, max(minSize, min(sizeByWidth, sizeByHeight)))
+                let renderKey = cacheKey(
+                    size: proxy.size,
+                    cellSize: size,
+                    columns: cols,
+                    displayedCount: displayedCount,
+                    groupSize: groupSize
+                )
 
-                LazyVGrid(columns: gridItems(size: size), spacing: spacing) {
-                    ForEach(0..<count, id: \.self) { _ in
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(color.opacity(0.85))
-                            .frame(width: size, height: size)
+                Group {
+                    if let image = cachedImage ?? cachedImage(for: renderKey) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Color.clear
                     }
                 }
                 .frame(width: width, height: height, alignment: .center)
+                .task(id: renderKey) {
+                    cachedImage = renderImage(
+                        size: proxy.size,
+                        cellSize: size,
+                        columns: cols,
+                        displayedCount: displayedCount
+                    )
+                    if let cachedImage {
+                        setCachedImage(cachedImage, for: renderKey)
+                    }
+                }
             }
         }
     }
 
-    private func gridItems(size: CGFloat) -> [GridItem] {
-        Array(repeating: GridItem(.fixed(size), spacing: spacing), count: max(columns, 1))
+    private func renderImage(
+        size: CGSize,
+        cellSize: CGFloat,
+        columns: Int,
+        displayedCount: Int
+    ) -> UIImage? {
+        guard size.width > 0, size.height > 0, cellSize > 0 else { return nil }
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let uiColor = UIColor(color).withAlphaComponent(0.85)
+        return renderer.image { context in
+            context.cgContext.setFillColor(uiColor.cgColor)
+            for index in 0..<displayedCount {
+                let row = index / columns
+                let col = index % columns
+                let x = CGFloat(col) * (cellSize + spacing)
+                let y = CGFloat(row) * (cellSize + spacing)
+                let rect = CGRect(x: x, y: y, width: cellSize, height: cellSize)
+                context.cgContext.fill(rect)
+            }
+        }
+    }
+
+    private func cacheKey(
+        size: CGSize,
+        cellSize: CGFloat,
+        columns: Int,
+        displayedCount: Int,
+        groupSize: Int
+    ) -> String {
+        let colorKey = colorCacheKey()
+        return "\(count)|\(displayedCount)|\(groupSize)|\(columns)|\(spacing)|\(cellSize)|\(size.width)x\(size.height)|\(colorKey)"
+    }
+
+    private func colorCacheKey() -> String {
+        let uiColor = UIColor(color)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return "\(red.rounded(toPlaces: 3))-\(green.rounded(toPlaces: 3))-\(blue.rounded(toPlaces: 3))-\(alpha.rounded(toPlaces: 3))"
+    }
+
+    private func cachedImage(for key: String) -> UIImage? {
+        Self.cache.object(forKey: key as NSString)
+    }
+
+    private func setCachedImage(_ image: UIImage, for key: String) {
+        Self.cache.setObject(image, forKey: key as NSString)
+    }
+
+    private static let cache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 64
+        return cache
+    }()
+}
+
+private extension CGFloat {
+    func rounded(toPlaces places: Int) -> CGFloat {
+        let divisor = pow(10.0, CGFloat(places))
+        return (self * divisor).rounded() / divisor
     }
 }
 
@@ -277,7 +363,13 @@ struct ExponentExplanationView: View {
     let color: Color
     let numberFont: (CGFloat, Font.Weight) -> Font
 
-    @State private var currentStep: Int = 1
+    @State private var currentStep: Int?
+    @State private var isPlaying: Bool = false
+    @State private var timer: Timer?
+
+    private var step: Int {
+        currentStep ?? exponent
+    }
 
     private var maxStep: Int {
         max(exponent, 1)
@@ -297,25 +389,65 @@ struct ExponentExplanationView: View {
         }
     }
 
+    private func startPlaying() {
+        isPlaying = true
+        timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
+            if step < maxStep {
+                currentStep = step + 1
+            } else {
+                currentStep = 1
+            }
+        }
+    }
+
+    private func stopPlaying() {
+        isPlaying = false
+        timer?.invalidate()
+        timer = nil
+    }
+
     var body: some View {
         VStack(spacing: 16) {
-            Text(labelForStep(currentStep))
+            Text(labelForStep(step))
                 .font(numberFont(18, .semibold))
-                .animation(.none, value: currentStep)
+                .animation(.none, value: step)
 
-            Picker("Step", selection: $currentStep) {
-                ForEach(1...maxStep, id: \.self) { step in
-                    Text("\(base)\(superscript(step))").tag(step)
+            HStack(spacing: 12) {
+                Button {
+                    if isPlaying {
+                        stopPlaying()
+                    } else {
+                        startPlaying()
+                    }
+                } label: {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.accentColor)
+                        .frame(width: 32, height: 32)
+                        .background(Color(.systemGray5))
+                        .clipShape(Circle())
                 }
+                .buttonStyle(.plain)
+
+                Picker("Step", selection: Binding(
+                    get: { step },
+                    set: { currentStep = $0 }
+                )) {
+                    ForEach(1...maxStep, id: \.self) { s in
+                        Text("\(base)\(superscript(s))").tag(s)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
             .padding(.horizontal)
 
-            RecursiveExponentShape(base: base, depth: currentStep)
-                .fill(color.opacity(0.85))
+            ExponentRasterView(base: base, depth: step, color: color)
                 .frame(maxWidth: .infinity, minHeight: 280)
-                .animation(.easeInOut(duration: 0.4), value: currentStep)
+                .animation(.easeInOut(duration: 0.2), value: step)
                 .padding(.bottom, 30)
+        }
+        .onDisappear {
+            stopPlaying()
         }
     }
 
@@ -328,32 +460,66 @@ struct ExponentExplanationView: View {
     }
 }
 
-struct RecursiveExponentShape: Shape {
+struct ExponentRasterView: View {
     let base: Int
-    var depth: Int
+    let depth: Int
+    let color: Color
+    var maxRenderCells: Int = 200_000
 
-    var animatableData: Double {
-        get { Double(depth) }
-        set { depth = Int(newValue.rounded()) }
-    }
+    @State private var cachedImage: UIImage?
 
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        drawRecursive(in: rect, depth: depth, path: &path)
-        return path
-    }
-
-    private func drawRecursive(in rect: CGRect, depth: Int, path: inout Path) {
-        if depth <= 1 {
-            drawBaseSquares(in: rect, path: &path)
-        } else {
-            drawNestedGroups(in: rect, depth: depth, path: &path)
+    var body: some View {
+        GeometryReader { proxy in
+            let renderKey = cacheKey(size: proxy.size)
+            Group {
+                if let image = cachedImage ?? cachedImage(for: renderKey) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    Color.clear
+                }
+            }
+            .task(id: renderKey) {
+                cachedImage = renderImage(size: proxy.size)
+                if let cachedImage {
+                    setCachedImage(cachedImage, for: renderKey)
+                }
+            }
         }
     }
 
-    private func drawBaseSquares(in rect: CGRect, path: inout Path) {
-        // Depth 1 is always horizontal
-        let count = base
+    private func renderImage(size: CGSize) -> UIImage? {
+        guard size.width > 0, size.height > 0 else { return nil }
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let uiColor = UIColor(color).withAlphaComponent(0.85)
+        return renderer.image { context in
+            context.cgContext.setFillColor(uiColor.cgColor)
+            let rect = CGRect(origin: .zero, size: size)
+            drawRecursive(in: rect, depth: depth, context: context.cgContext)
+        }
+    }
+
+    private func drawRecursive(in rect: CGRect, depth: Int, context: CGContext) {
+        if depth <= 1 {
+            drawBaseSquares(in: rect, context: context)
+        } else if estimatedCellCount(depth: depth) > maxRenderCells {
+            drawCompressedGrid(in: rect, context: context)
+        } else {
+            drawNestedGroups(in: rect, depth: depth, context: context)
+        }
+    }
+
+    private func estimatedCellCount(depth: Int) -> Int {
+        let value = pow(Double(base), Double(max(depth, 1)))
+        if value > Double(Int.max) {
+            return Int.max
+        }
+        return Int(value)
+    }
+
+    private func drawBaseSquares(in rect: CGRect, context: CGContext) {
+        let count = max(base, 1)
         let spacingRatio: CGFloat = 0.06
         let totalSpacingRatio = spacingRatio * CGFloat(count - 1)
         let squareSize = min(rect.width / (CGFloat(count) + totalSpacingRatio * CGFloat(count)), rect.height)
@@ -361,40 +527,87 @@ struct RecursiveExponentShape: Shape {
         let totalWidth = CGFloat(count) * squareSize + spacing * CGFloat(count - 1)
         let startX = rect.midX - totalWidth / 2
         let startY = rect.midY - squareSize / 2
-        let cornerRadius = squareSize * 0.15
 
         for i in 0..<count {
             let x = startX + CGFloat(i) * (squareSize + spacing)
             let squareRect = CGRect(x: x, y: startY, width: squareSize, height: squareSize)
-            path.addRoundedRect(in: squareRect, cornerSize: CGSize(width: cornerRadius, height: cornerRadius))
+            context.fill(squareRect)
         }
     }
 
-    private func drawNestedGroups(in rect: CGRect, depth: Int, path: inout Path) {
-        // Alternate: even depth = vertical stacking, odd depth = horizontal stacking
+    private func drawNestedGroups(in rect: CGRect, depth: Int, context: CGContext) {
         let isVertical = depth % 2 == 0
         let spacingRatio: CGFloat = 0.04
+        let count = max(base, 1)
 
         if isVertical {
-            // Stack groups vertically
             let spacing = rect.height * spacingRatio
-            let groupHeight = (rect.height - spacing * CGFloat(base - 1)) / CGFloat(base)
+            let groupHeight = (rect.height - spacing * CGFloat(count - 1)) / CGFloat(count)
 
-            for i in 0..<base {
+            for i in 0..<count {
                 let y = rect.minY + CGFloat(i) * (groupHeight + spacing)
                 let groupRect = CGRect(x: rect.minX, y: y, width: rect.width, height: groupHeight)
-                drawRecursive(in: groupRect, depth: depth - 1, path: &path)
+                drawRecursive(in: groupRect, depth: depth - 1, context: context)
             }
         } else {
-            // Stack groups horizontally
             let spacing = rect.width * spacingRatio
-            let groupWidth = (rect.width - spacing * CGFloat(base - 1)) / CGFloat(base)
+            let groupWidth = (rect.width - spacing * CGFloat(count - 1)) / CGFloat(count)
 
-            for i in 0..<base {
+            for i in 0..<count {
                 let x = rect.minX + CGFloat(i) * (groupWidth + spacing)
                 let groupRect = CGRect(x: x, y: rect.minY, width: groupWidth, height: rect.height)
-                drawRecursive(in: groupRect, depth: depth - 1, path: &path)
+                drawRecursive(in: groupRect, depth: depth - 1, context: context)
             }
         }
     }
+
+    private func drawCompressedGrid(in rect: CGRect, context: CGContext) {
+        let total = max(estimatedCellCount(depth: depth), 1)
+        let groupSize = max(1, Int(ceil(Double(total) / Double(maxRenderCells))))
+        let displayed = Int(ceil(Double(total) / Double(groupSize)))
+        let cols = max(Int(ceil(sqrt(Double(displayed)))), 1)
+        let rows = max(Int(ceil(Double(displayed) / Double(cols))), 1)
+        let spacingRatio: CGFloat = 0.04
+        let spacing = min(rect.width, rect.height) * spacingRatio / CGFloat(max(cols, rows))
+        let sizeByWidth = (rect.width - CGFloat(cols - 1) * spacing) / CGFloat(cols)
+        let sizeByHeight = (rect.height - CGFloat(rows - 1) * spacing) / CGFloat(rows)
+        let size = min(sizeByWidth, sizeByHeight)
+
+        for index in 0..<displayed {
+            let row = index / cols
+            let col = index % cols
+            let x = rect.minX + CGFloat(col) * (size + spacing)
+            let y = rect.minY + CGFloat(row) * (size + spacing)
+            context.fill(CGRect(x: x, y: y, width: size, height: size))
+        }
+    }
+
+    private func cacheKey(size: CGSize) -> String {
+        let colorKey = colorCacheKey()
+        return "\(base)|\(depth)|\(size.width)x\(size.height)|\(maxRenderCells)|\(colorKey)"
+    }
+
+    private func colorCacheKey() -> String {
+        let uiColor = UIColor(color)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return "\(red.rounded(toPlaces: 3))-\(green.rounded(toPlaces: 3))-\(blue.rounded(toPlaces: 3))-\(alpha.rounded(toPlaces: 3))"
+    }
+
+    private func cachedImage(for key: String) -> UIImage? {
+        Self.cache.object(forKey: key as NSString)
+    }
+
+    private func setCachedImage(_ image: UIImage, for key: String) {
+        Self.cache.setObject(image, forKey: key as NSString)
+    }
+
+    private static let cache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 32
+        return cache
+    }()
 }
