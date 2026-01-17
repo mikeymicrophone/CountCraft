@@ -12,7 +12,7 @@ struct SetExplanationView: View {
     let maxElement: Int
     let numberStyle: NumberStyle
 
-    private let displayLimit = 24
+    private let displayLimit = 32
 
     var body: some View {
         VStack(spacing: 16) {
@@ -43,13 +43,16 @@ struct SetExplanationView: View {
                 subsetTile(values: [])
                     .frame(maxWidth: .infinity, alignment: .center)
             } else {
-                LazyVGrid(columns: gridColumns, spacing: 12) {
-                    ForEach(displayedSubsets.indices, id: \.self) { index in
-                        subsetTile(values: displayedSubsets[index])
+                ScrollView {
+                    LazyVGrid(columns: gridColumns, spacing: 12) {
+                        ForEach(displayedSubsets.indices, id: \.self) { index in
+                            subsetTile(values: displayedSubsets[index])
+                        }
+                        if remainingCount > 0 {
+                            remainingTile
+                        }
                     }
-                    if remainingCount > 0 {
-                        remainingTile
-                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
             }
@@ -80,24 +83,14 @@ struct SetExplanationView: View {
     }
 
     private func subsetTile(values: [Int]) -> some View {
-        let label = values.isEmpty ? "∅" : values.map { NumberFormatting.string(from: $0) }.joined(separator: ", ")
-        return HStack(spacing: 6) {
-            if values.isEmpty {
-                Text(label)
-                    .foregroundColor(.secondary)
-            } else {
-                ForEach(values, id: \.self) { value in
-                    Text(NumberFormatting.string(from: value))
-                        .foregroundColor(numberStyle.primaryColor(for: value))
-                }
-            }
-        }
-        .font(numberStyle.font(size: 16, weight: .semibold))
-        .padding(.vertical, 8)
-        .padding(.horizontal, 10)
-        .frame(minWidth: 80)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        Text(setText(values: values))
+            .font(numberStyle.font(size: tileFontSize(for: values), weight: .semibold))
+            .multilineTextAlignment(.center)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
+            .frame(minWidth: 80)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var remainingTile: some View {
@@ -109,5 +102,40 @@ struct SetExplanationView: View {
             .frame(minWidth: 80)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func tileFontSize(for values: [Int]) -> CGFloat {
+        if values.count <= 4 {
+            return 16
+        }
+        if values.count <= 6 {
+            return 14
+        }
+        return 12
+    }
+
+    private func setText(values: [Int]) -> AttributedString {
+        var result = AttributedString()
+        var open = AttributedString("{")
+        open.foregroundColor = .secondary
+        result.append(open)
+
+        if !values.isEmpty {
+            for (index, value) in values.enumerated() {
+                if index > 0 {
+                    var comma = AttributedString(", ")
+                    comma.foregroundColor = .secondary
+                    result.append(comma)
+                }
+                var valueText = AttributedString(NumberFormatting.string(from: value))
+                valueText.foregroundColor = numberStyle.primaryColor(for: value)
+                result.append(valueText)
+            }
+        }
+
+        var close = AttributedString("}")
+        close.foregroundColor = .secondary
+        result.append(close)
+        return result
     }
 }

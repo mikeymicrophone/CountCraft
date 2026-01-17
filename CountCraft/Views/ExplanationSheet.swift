@@ -43,7 +43,7 @@ struct ExplanationSheet: View {
                 }
                 .frame(
                     maxWidth: .infinity,
-                    minHeight: operation == .exponent || operation == .sets ? 320 : 280
+                    minHeight: operation == .exponent ? 320 : (operation == .sets ? 420 : 280)
                 )
             }
             .padding()
