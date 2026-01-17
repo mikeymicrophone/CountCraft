@@ -36,20 +36,61 @@ struct ExplanationSheet: View {
         }
     }
 
+    @ViewBuilder
     private var headerView: some View {
-        HStack(spacing: 8) {
-            Text(NumberFormatting.string(from: fact.a))
-                .foregroundColor(numberColor(for: fact.a) ?? .primary)
-            Text(operation.symbol)
-                .foregroundColor(.secondary)
-            Text(NumberFormatting.string(from: fact.b))
-                .foregroundColor(numberColor(for: fact.b) ?? .primary)
-            Text("=")
-                .foregroundColor(.secondary)
-            Text(NumberFormatting.string(from: operation.answer(for: fact)))
-                .foregroundColor(numberColor(for: operation.answer(for: fact)) ?? .primary)
+        if operation == .exponent {
+            HStack(spacing: 6) {
+                exponentSuperscriptText(
+                    base: fact.a,
+                    exponent: fact.b,
+                    baseSize: 28,
+                    exponentSize: 18,
+                    exponentOffset: 12,
+                    baseColor: numberColor(for: fact.a) ?? .primary,
+                    exponentColor: numberColor(for: fact.b) ?? .primary
+                )
+                Text("=")
+                    .foregroundColor(.secondary)
+                    .font(numberFont(size: 28, weight: .semibold))
+                Text(NumberFormatting.string(from: operation.answer(for: fact)))
+                    .foregroundColor(numberColor(for: operation.answer(for: fact)) ?? .primary)
+                    .font(numberFont(size: 28, weight: .semibold))
+            }
+        } else {
+            HStack(spacing: 8) {
+                Text(NumberFormatting.string(from: fact.a))
+                    .foregroundColor(numberColor(for: fact.a) ?? .primary)
+                Text(operation.symbol)
+                    .foregroundColor(.secondary)
+                Text(NumberFormatting.string(from: fact.b))
+                    .foregroundColor(numberColor(for: fact.b) ?? .primary)
+                Text("=")
+                    .foregroundColor(.secondary)
+                Text(NumberFormatting.string(from: operation.answer(for: fact)))
+                    .foregroundColor(numberColor(for: operation.answer(for: fact)) ?? .primary)
+            }
+            .font(numberFont(size: 28, weight: .semibold))
         }
-        .font(numberFont(size: 28, weight: .semibold))
+    }
+
+    private func exponentSuperscriptText(
+        base: Int,
+        exponent: Int,
+        baseSize: CGFloat,
+        exponentSize: CGFloat,
+        exponentOffset: CGFloat,
+        baseColor: Color,
+        exponentColor: Color
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+            Text(NumberFormatting.string(from: base))
+                .foregroundColor(baseColor)
+                .font(numberFont(size: baseSize, weight: .semibold))
+            Text(NumberFormatting.string(from: exponent))
+                .foregroundColor(exponentColor)
+                .font(numberFont(size: exponentSize, weight: .semibold))
+                .baselineOffset(exponentOffset)
+        }
     }
 
     private var additionExplanation: some View {

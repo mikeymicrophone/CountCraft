@@ -68,7 +68,10 @@ struct PracticeMath {
             }
         }
 
-        while values.count < 4 {
+        var loopGuard = 0
+        let maxLoops = 100
+        while values.count < 4 && loopGuard < maxLoops {
+            loopGuard += 1
             if let candidate = candidateValue(
                 answer: answer,
                 maxValue: maxValue,
@@ -77,6 +80,18 @@ struct PracticeMath {
                 values.insert(candidate)
             }
         }
+
+        // Fallback if we couldn't generate enough unique values
+        while values.count < 4 {
+            let multiplier = values.count + 1
+            let fallback = max(0, answer + multiplier * (answer / 10 + 1))
+            if !values.contains(fallback) {
+                values.insert(fallback)
+            } else {
+                values.insert(answer * multiplier)
+            }
+        }
+
         return values.shuffled()
     }
 
@@ -122,23 +137,50 @@ struct PracticeMath {
         difficulty: ChoiceDifficulty
     ) -> Int? {
         guard maxValue > 0 else { return nil }
-        let range = 0...maxValue
+
+        // For large answers, use percentage-based offsets instead of fixed offsets
+        let usesProportionalOffset = answer > maxValue / 2
         var candidate = answer
         var attempts = 0
 
         while candidate == answer && attempts < 12 {
-            let offset = Int.random(in: difficulty.offsetRange)
+            let offset: Int
+            if usesProportionalOffset {
+                // Use 5-25% offset based on difficulty
+                let percentRange: ClosedRange<Double> = switch difficulty {
+                case .easy: 0.15...0.30
+                case .medium: 0.08...0.20
+                case .hard: 0.03...0.12
+                }
+                let percent = Double.random(in: percentRange)
+                let sign = Bool.random() ? 1 : -1
+                offset = sign * max(1, Int(Double(answer) * percent))
+            } else {
+                offset = Int.random(in: difficulty.offsetRange)
+            }
+
             if offset == 0 {
                 attempts += 1
                 continue
             }
-            let raw = answer + offset
-            candidate = min(max(raw, range.lowerBound), range.upperBound)
+
+            // Prevent overflow for very large numbers
+            let raw: Int
+            if answer > Int.max / 2 {
+                raw = answer / 2 + offset
+            } else {
+                raw = answer + offset
+            }
+
+            candidate = max(0, raw)
             attempts += 1
         }
 
         if candidate == answer {
-            candidate = Int.random(in: range)
+            // Fallback: generate a value near the answer
+            let fallbackOffset = max(1, answer / 10)
+            candidate = answer + (Bool.random() ? fallbackOffset : -fallbackOffset)
+            candidate = max(0, candidate)
             if candidate == answer {
                 return nil
             }
