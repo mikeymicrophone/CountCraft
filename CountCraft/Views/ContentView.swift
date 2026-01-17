@@ -14,6 +14,7 @@ struct ContentView: View {
     @Query(sort: \Profile.name, order: .forward) private var profiles: [Profile]
     @AppStorage("selectedProfileId") private var selectedProfileId = ""
     @State private var selectedTab: TabSelection = .addition
+    @State private var pendingExplanation: [OperationType: MathFact] = [:]
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -22,7 +23,8 @@ struct ContentView: View {
                 guesses: activeGuesses,
                 profile: selectedProfile,
                 onGuess: recordGuess,
-                onSwitchOperation: switchOperation
+                onSwitchOperation: switchOperation,
+                pendingExplanation: pendingBinding(for: .addition)
             )
                 .tabItem {
                     Label("Addition", systemImage: "plus")
@@ -34,7 +36,8 @@ struct ContentView: View {
                 guesses: activeGuesses,
                 profile: selectedProfile,
                 onGuess: recordGuess,
-                onSwitchOperation: switchOperation
+                onSwitchOperation: switchOperation,
+                pendingExplanation: pendingBinding(for: .multiplication)
             )
                 .tabItem {
                     Label("Multiply", systemImage: "multiply")
@@ -46,7 +49,8 @@ struct ContentView: View {
                 guesses: activeGuesses,
                 profile: selectedProfile,
                 onGuess: recordGuess,
-                onSwitchOperation: switchOperation
+                onSwitchOperation: switchOperation,
+                pendingExplanation: pendingBinding(for: .exponent)
             )
                 .tabItem {
                     Label("Exponents", systemImage: "function")
@@ -71,7 +75,8 @@ struct ContentView: View {
         }
     }
 
-    private func switchOperation(_ operation: OperationType) {
+    private func switchOperation(_ operation: OperationType, fact: MathFact) {
+        pendingExplanation[operation] = fact
         switch operation {
         case .addition:
             selectedTab = .addition
@@ -80,6 +85,19 @@ struct ContentView: View {
         case .exponent:
             selectedTab = .exponent
         }
+    }
+
+    private func pendingBinding(for operation: OperationType) -> Binding<MathFact?> {
+        Binding(
+            get: { pendingExplanation[operation] },
+            set: { newValue in
+                if let newValue {
+                    pendingExplanation[operation] = newValue
+                } else {
+                    pendingExplanation.removeValue(forKey: operation)
+                }
+            }
+        )
     }
 
     private var selectedProfile: Profile? {

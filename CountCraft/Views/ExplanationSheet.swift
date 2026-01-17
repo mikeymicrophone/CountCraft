@@ -26,22 +26,18 @@ struct ExplanationSheet: View {
                     fact: fact,
                     numberStyle: numberStyle
                 )
-                if let onSwitchOperation {
-                    ExplanationOperationArrows(
-                        currentOperation: operation,
-                        onSelect: onSwitchOperation
-                    )
-                }
                 ZStack {
                     explanationContent
                         .frame(maxWidth: operation == .exponent ? .infinity : 520)
                         .padding(.horizontal, operation == .exponent ? 16 : 24)
                         .padding(.top, 18)
                     ExplanationNavigationArrows(
+                        operation: operation,
                         fact: fact,
                         rowValues: rowValues,
                         columnValues: columnValues,
-                        onNavigate: onNavigate
+                        onNavigate: onNavigate,
+                        onSwitchOperation: onSwitchOperation
                     )
                 }
                 .frame(maxWidth: .infinity, minHeight: operation == .exponent ? 360 : 280)

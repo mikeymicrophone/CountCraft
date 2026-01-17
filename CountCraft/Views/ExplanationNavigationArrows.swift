@@ -8,23 +8,63 @@
 import SwiftUI
 
 struct ExplanationNavigationArrows: View {
+    let operation: OperationType
     let fact: MathFact
     let rowValues: [Int]
     let columnValues: [Int]
     let onNavigate: (MathFact) -> Void
+    let onSwitchOperation: ((OperationType) -> Void)?
 
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
             let height = proxy.size.height
+            let topY: CGFloat = 24
+            let operationOffset: CGFloat = 44
             ZStack {
+                arrowButton(
+                    systemName: "arrow.up.left",
+                    enabled: canMove(rowDelta: -1, colDelta: -1)
+                ) {
+                    move(rowDelta: -1, colDelta: -1)
+                }
+                .position(x: 24, y: topY)
+
+                arrowButton(
+                    systemName: "arrow.up.right",
+                    enabled: canMove(rowDelta: -1, colDelta: 1)
+                ) {
+                    move(rowDelta: -1, colDelta: 1)
+                }
+                .position(x: width - 24, y: topY)
+
                 arrowButton(
                     systemName: "arrow.up",
                     enabled: canMove(rowDelta: -1, colDelta: 0)
                 ) {
                     move(rowDelta: -1, colDelta: 0)
                 }
-                .position(x: width / 2, y: 8)
+                .position(x: width / 2, y: topY)
+
+                if let target = switchLeftTarget {
+                    arrowButton(
+                        systemName: "arrow.left",
+                        enabled: onSwitchOperation != nil
+                    ) {
+                        onSwitchOperation?(target)
+                    }
+                    .position(x: width / 2 - operationOffset, y: topY)
+                }
+
+                if let target = switchRightTarget {
+                    arrowButton(
+                        systemName: "arrow.right",
+                        enabled: onSwitchOperation != nil
+                    ) {
+                        onSwitchOperation?(target)
+                    }
+                    .position(x: width / 2 + operationOffset, y: topY)
+                }
 
                 arrowButton(
                     systemName: "arrow.down",
@@ -33,22 +73,6 @@ struct ExplanationNavigationArrows: View {
                     move(rowDelta: 1, colDelta: 0)
                 }
                 .position(x: width / 2, y: height - 8)
-
-                arrowButton(
-                    systemName: "arrow.up.left",
-                    enabled: canMove(rowDelta: -1, colDelta: -1)
-                ) {
-                    move(rowDelta: -1, colDelta: -1)
-                }
-                .position(x: 24, y: 24)
-
-                arrowButton(
-                    systemName: "arrow.up.right",
-                    enabled: canMove(rowDelta: -1, colDelta: 1)
-                ) {
-                    move(rowDelta: -1, colDelta: 1)
-                }
-                .position(x: width - 24, y: 24)
 
                 arrowButton(
                     systemName: "arrow.down.left",
@@ -123,5 +147,27 @@ struct ExplanationNavigationArrows: View {
         guard rowValues.indices.contains(targetRow), columnValues.indices.contains(targetCol) else { return }
         let next = MathFact(a: rowValues[targetRow], b: columnValues[targetCol])
         onNavigate(next)
+    }
+
+    private var switchLeftTarget: OperationType? {
+        switch operation {
+        case .addition:
+            return nil
+        case .multiplication:
+            return .addition
+        case .exponent:
+            return .multiplication
+        }
+    }
+
+    private var switchRightTarget: OperationType? {
+        switch operation {
+        case .addition:
+            return .multiplication
+        case .multiplication:
+            return .exponent
+        case .exponent:
+            return nil
+        }
     }
 }

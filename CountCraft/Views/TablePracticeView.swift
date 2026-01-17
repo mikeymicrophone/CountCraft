@@ -12,7 +12,7 @@ struct TablePracticeView: View {
     private let guesses: [PracticeGuess]
     private let profile: Profile?
     private let onGuess: (PracticeGuess) -> Void
-    private let onSwitchOperation: ((OperationType) -> Void)?
+    private let onSwitchOperation: ((OperationType, MathFact) -> Void)?
 
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
@@ -26,19 +26,22 @@ struct TablePracticeView: View {
     @State private var inputMode: GuessInputMode = .multipleChoice
     @State private var activeSheet: TableSheetItem?
     @State private var showingPreferences = false
+    @Binding private var pendingExplanation: MathFact?
 
     init(
         operation: OperationType,
         guesses: [PracticeGuess],
         profile: Profile?,
         onGuess: @escaping (PracticeGuess) -> Void,
-        onSwitchOperation: ((OperationType) -> Void)? = nil
+        onSwitchOperation: ((OperationType, MathFact) -> Void)? = nil,
+        pendingExplanation: Binding<MathFact?> = .constant(nil)
     ) {
         self.operation = operation
         self.guesses = guesses
         self.profile = profile
         self.onGuess = onGuess
         self.onSwitchOperation = onSwitchOperation
+        self._pendingExplanation = pendingExplanation
         _axisMinX = AppStorage(wrappedValue: 0, "prefAxisMinX-\(operation.rawValue)")
         _axisMaxX = AppStorage(wrappedValue: 12, "prefAxisMaxX-\(operation.rawValue)")
         _axisMinY = AppStorage(wrappedValue: 0, "prefAxisMinY-\(operation.rawValue)")
@@ -105,7 +108,7 @@ struct TablePracticeView: View {
                         onSwitchOperation: onSwitchOperation.map { switchOperation in
                             { target in
                                 activeSheet = nil
-                                switchOperation(target)
+                                switchOperation(target, item.fact)
                             }
                         }
                     )
@@ -114,6 +117,12 @@ struct TablePracticeView: View {
             .sheet(isPresented: $showingPreferences) {
                 PreferencesView()
             }
+        }
+        .onAppear {
+            openPendingExplanationIfNeeded()
+        }
+        .onChange(of: pendingExplanation) { _, _ in
+            openPendingExplanationIfNeeded()
         }
     }
 
@@ -163,6 +172,12 @@ struct TablePracticeView: View {
 
     private var numberStyle: NumberStyle {
         NumberStyle(fontChoice: numberFontChoice, colorCoded: colorCodedNumbers)
+    }
+
+    private func openPendingExplanationIfNeeded() {
+        guard let fact = pendingExplanation else { return }
+        activeSheet = TableSheetItem(fact: fact, mode: .explain)
+        pendingExplanation = nil
     }
 
     private var rowValues: [Int] {
