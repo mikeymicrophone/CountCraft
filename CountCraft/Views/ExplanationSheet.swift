@@ -297,30 +297,12 @@ struct ExponentExplanationView: View {
         }
     }
 
-    private func groupCountAtStep(_ step: Int) -> Int {
-        if step == 1 {
-            return 1
-        } else {
-            return base
-        }
-    }
-
-    private func squaresPerGroupAtStep(_ step: Int) -> Int {
-        if step == 1 {
-            return base
-        } else {
-            return valueAtStep(step - 1)
-        }
-    }
-
     var body: some View {
         VStack(spacing: 16) {
-            // Step label
             Text(labelForStep(currentStep))
                 .font(numberFont(18, .semibold))
                 .animation(.none, value: currentStep)
 
-            // Segmented picker for steps
             Picker("Step", selection: $currentStep) {
                 ForEach(1...maxStep, id: \.self) { step in
                     Text("\(base)\(superscript(step))").tag(step)
@@ -329,16 +311,11 @@ struct ExponentExplanationView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
 
-            // Visualization
-            GroupedSquaresView(
-                groupCount: groupCountAtStep(currentStep),
-                squaresPerGroup: squaresPerGroupAtStep(currentStep),
-                base: base,
-                color: color
-            )
-            .frame(maxWidth: .infinity, minHeight: 200)
-            .animation(.easeInOut(duration: 0.3), value: currentStep)
-            .padding(.bottom, 30)
+            RecursiveExponentShape(base: base, depth: currentStep)
+                .fill(color.opacity(0.85))
+                .frame(maxWidth: 300, maxHeight: 200)
+                .animation(.easeInOut(duration: 0.4), value: currentStep)
+                .padding(.bottom, 30)
         }
     }
 
@@ -351,117 +328,69 @@ struct ExponentExplanationView: View {
     }
 }
 
-struct GroupedSquaresView: View {
-    let groupCount: Int
-    let squaresPerGroup: Int
+struct RecursiveExponentShape: Shape {
     let base: Int
-    let color: Color
+    var depth: Int
 
-    private var totalSquares: Int {
-        groupCount * squaresPerGroup
+    var animatableData: Double {
+        get { Double(depth) }
+        set { depth = Int(newValue.rounded()) }
     }
 
-    private var columns: Int {
-        // For nested groups, use base as column count within each group
-        min(base, 6)
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        drawRecursive(in: rect, depth: depth, path: &path)
+        return path
     }
 
-    private func squareSizeFor(total: Int, availableWidth: CGFloat, availableHeight: CGFloat) -> CGFloat {
-        // Calculate appropriate square size based on total count
-        let maxSize: CGFloat = 24
-        let minSize: CGFloat = 4
-
-        if total <= 16 {
-            return maxSize
-        } else if total <= 64 {
-            return 18
-        } else if total <= 256 {
-            return 12
-        } else if total <= 1024 {
-            return 8
+    private func drawRecursive(in rect: CGRect, depth: Int, path: inout Path) {
+        if depth <= 1 {
+            // Base case: draw `base` squares in a row
+            drawBaseSquares(in: rect, path: &path)
         } else {
-            return minSize
+            // Recursive case: draw `base` copies of the previous depth
+            drawNestedGroups(in: rect, depth: depth, path: &path)
         }
     }
 
-    var body: some View {
-        GeometryReader { proxy in
-            let squareSize = squareSizeFor(total: totalSquares, availableWidth: proxy.size.width, availableHeight: proxy.size.height)
-            let groupSpacing: CGFloat = squareSize > 10 ? 12 : 6
-            let innerSpacing: CGFloat = max(2, squareSize * 0.15)
+    private func drawBaseSquares(in rect: CGRect, path: inout Path) {
+        let count = base
+        let spacing: CGFloat = rect.width * 0.08
+        let totalSpacing = spacing * CGFloat(count - 1)
+        let squareSize = min((rect.width - totalSpacing) / CGFloat(count), rect.height)
+        let totalWidth = CGFloat(count) * squareSize + totalSpacing
+        let startX = rect.midX - totalWidth / 2
+        let startY = rect.midY - squareSize / 2
+        let cornerRadius = squareSize * 0.15
 
-            let groupColumns = adaptiveGroupColumns(
-                groupCount: groupCount,
-                squaresPerGroup: squaresPerGroup,
-                squareSize: squareSize,
-                groupSpacing: groupSpacing,
-                innerSpacing: innerSpacing,
-                availableWidth: proxy.size.width
-            )
-
-            ScrollView {
-                LazyVGrid(columns: groupColumns, spacing: groupSpacing) {
-                    ForEach(0..<groupCount, id: \.self) { groupIndex in
-                        SingleGroupView(
-                            squareCount: squaresPerGroup,
-                            columns: columns,
-                            squareSize: squareSize,
-                            spacing: innerSpacing,
-                            color: color,
-                            showBorder: groupCount > 1
-                        )
-                        .padding(.top, groupIndex % 2 == 1 && groupCount > 1 ? groupSpacing : 0)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-            }
+        for i in 0..<count {
+            let x = startX + CGFloat(i) * (squareSize + spacing)
+            let squareRect = CGRect(x: x, y: startY, width: squareSize, height: squareSize)
+            path.addRoundedRect(in: squareRect, cornerSize: CGSize(width: cornerRadius, height: cornerRadius))
         }
     }
 
-    private func adaptiveGroupColumns(
-        groupCount: Int,
-        squaresPerGroup: Int,
-        squareSize: CGFloat,
-        groupSpacing: CGFloat,
-        innerSpacing: CGFloat,
-        availableWidth: CGFloat
-    ) -> [GridItem] {
-        let cols = min(squaresPerGroup, columns)
-        let groupWidth = CGFloat(cols) * squareSize + CGFloat(cols - 1) * innerSpacing + 16
-        let maxGroupsPerRow = max(1, Int((availableWidth + groupSpacing) / (groupWidth + groupSpacing)))
-        let groupsPerRow = min(groupCount, maxGroupsPerRow)
+    private func drawNestedGroups(in rect: CGRect, depth: Int, path: inout Path) {
+        // Arrange `base` groups in a grid layout
+        let cols = min(base, 4)
+        let rows = Int(ceil(Double(base) / Double(cols)))
 
-        return Array(repeating: GridItem(.flexible(), spacing: groupSpacing), count: groupsPerRow)
-    }
-}
+        let groupSpacingRatio: CGFloat = 0.12
+        let horizontalSpacing = rect.width * groupSpacingRatio / CGFloat(cols)
+        let verticalSpacing = rect.height * groupSpacingRatio / CGFloat(rows)
 
-struct SingleGroupView: View {
-    let squareCount: Int
-    let columns: Int
-    let squareSize: CGFloat
-    let spacing: CGFloat
-    let color: Color
-    let showBorder: Bool
+        let groupWidth = (rect.width - horizontalSpacing * CGFloat(cols - 1)) / CGFloat(cols)
+        let groupHeight = (rect.height - verticalSpacing * CGFloat(rows - 1)) / CGFloat(rows)
 
-    private var rows: Int {
-        max(1, Int(ceil(Double(squareCount) / Double(columns))))
-    }
+        for i in 0..<base {
+            let col = i % cols
+            let row = i / cols
 
-    var body: some View {
-        LazyVGrid(
-            columns: Array(repeating: GridItem(.fixed(squareSize), spacing: spacing), count: columns),
-            spacing: spacing
-        ) {
-            ForEach(0..<squareCount, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: max(2, squareSize * 0.12))
-                    .fill(color.opacity(0.85))
-                    .frame(width: squareSize, height: squareSize)
-            }
+            let x = rect.minX + CGFloat(col) * (groupWidth + horizontalSpacing)
+            let y = rect.minY + CGFloat(row) * (groupHeight + verticalSpacing)
+
+            let groupRect = CGRect(x: x, y: y, width: groupWidth, height: groupHeight)
+            drawRecursive(in: groupRect, depth: depth - 1, path: &path)
         }
-        .padding(showBorder ? 8 : 0)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(color.opacity(showBorder ? 0.3 : 0), lineWidth: 2)
-        )
     }
 }
