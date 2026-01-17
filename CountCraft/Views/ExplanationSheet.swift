@@ -1027,7 +1027,7 @@ struct ExponentSceneView: View {
             moveTarget.timingMode = SCNActionTimingMode.easeInEaseOut
 
             let firstZoom = SCNAction.move(
-                to: SCNVector3(targetFirst.x, targetFirst.y, Float(cubeSpan * 2.4)),
+                to: SCNVector3(targetFirst.x, targetFirst.y, Float(cubeSpan * 2.7)),
                 duration: 1.2
             )
             firstZoom.timingMode = SCNActionTimingMode.easeInEaseOut
@@ -1043,12 +1043,12 @@ struct ExponentSceneView: View {
                 thirdTarget.timingMode = SCNActionTimingMode.easeInEaseOut
 
                 let secondZoom = SCNAction.move(
-                    to: SCNVector3(targetSecond.x, targetSecond.y, Float(outerSpan * 2.0)),
+                    to: SCNVector3(targetSecond.x, targetSecond.y, Float(outerSpan * 2.3)),
                     duration: 1.1
                 )
                 secondZoom.timingMode = SCNActionTimingMode.easeInEaseOut
                 let thirdZoom = SCNAction.move(
-                    to: SCNVector3(targetThird.x, targetThird.y, Float(outer2Span * 2.0)),
+                    to: SCNVector3(targetThird.x, targetThird.y, Float(outer2Span * 2.6)),
                     duration: 1.1
                 )
                 thirdZoom.timingMode = SCNActionTimingMode.easeInEaseOut
@@ -1064,7 +1064,7 @@ struct ExponentSceneView: View {
                 let secondTarget = SCNAction.move(to: targetSecond, duration: 1.1)
                 secondTarget.timingMode = SCNActionTimingMode.easeInEaseOut
                 let secondZoom = SCNAction.move(
-                    to: SCNVector3(targetSecond.x, targetSecond.y, Float(outerSpan * 2.0)),
+                    to: SCNVector3(targetSecond.x, targetSecond.y, Float(outerSpan * 2.3)),
                     duration: 1.1
                 )
                 secondZoom.timingMode = SCNActionTimingMode.easeInEaseOut
@@ -1074,7 +1074,7 @@ struct ExponentSceneView: View {
             }
         } else {
             let zoomOut = SCNAction.move(
-                to: SCNVector3(0, 0, Float(fullSpan * 2.4)),
+                to: SCNVector3(0, 0, Float(fullSpan * 2.7)),
                 duration: 1.2
             )
             zoomOut.timingMode = SCNActionTimingMode.easeInEaseOut
