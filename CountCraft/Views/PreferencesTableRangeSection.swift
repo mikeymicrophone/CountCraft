@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PreferencesTableRangeSection: View {
-    @Binding var selectedOperation: OperationType
+    @Binding var selectedRange: RangeSelection
     let axisMinXBinding: Binding<Int>
     let axisMaxXBinding: Binding<Int>
     let axisMinYBinding: Binding<Int>
@@ -18,9 +18,9 @@ struct PreferencesTableRangeSection: View {
 
     var body: some View {
         Section("Table Range") {
-            Picker("Table", selection: $selectedOperation) {
-                ForEach(OperationType.allCases) { operation in
-                    Text(operation.title).tag(operation)
+            Picker("Table", selection: $selectedRange) {
+                ForEach(RangeSelection.allCases) { selection in
+                    Text(selection.title).tag(selection)
                 }
             }
             .pickerStyle(.segmented)

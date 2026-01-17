@@ -10,6 +10,7 @@ import SwiftUI
 struct ProbabilityView: View {
     @State private var mode: ProbabilityMode = .dice
     @State private var format: ProbabilityFormat = .fraction
+    @State private var showingPreferences = false
 
     var body: some View {
         NavigationStack {
@@ -59,6 +60,18 @@ struct ProbabilityView: View {
             }
             .padding()
             .navigationTitle("Probability")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingPreferences = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingPreferences) {
+                PreferencesView()
+            }
         }
     }
 }

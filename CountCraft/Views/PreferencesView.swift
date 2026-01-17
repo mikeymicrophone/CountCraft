@@ -16,7 +16,7 @@ struct PreferencesView: View {
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
     @AppStorage("prefChoiceDifficulty") private var difficultyRaw = ChoiceDifficulty.medium.rawValue
     @AppStorage("prefHintsShown") private var hintsShown = true
-    @State private var selectedOperation: OperationType = .addition
+    @State private var selectedRange: RangeSelection = .addition
     @State private var axisRefresh = 0
     @AppStorage("selectedProfileId") private var selectedProfileId = ""
     @State private var newProfileName = ""
@@ -49,7 +49,7 @@ struct PreferencesView: View {
                 )
 
                 PreferencesTableRangeSection(
-                    selectedOperation: $selectedOperation,
+                    selectedRange: $selectedRange,
                     axisMinXBinding: axisMinXBinding,
                     axisMaxXBinding: axisMaxXBinding,
                     axisMinYBinding: axisMinYBinding,
@@ -184,7 +184,7 @@ struct PreferencesView: View {
     }
 
     private func gridKey(_ baseKey: String) -> String {
-        "\(baseKey)-\(selectedOperation.rawValue)"
+        "\(baseKey)-\(selectedRange.rawValue)"
     }
 
     private func addProfile() {

@@ -17,8 +17,11 @@ struct ProbabilityGridView: View {
     let format: ProbabilityFormat
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
+    @AppStorage("prefAxisMinX-probability") private var probabilityMinX = 0
+    @AppStorage("prefAxisMaxX-probability") private var probabilityMaxX = 12
+    @AppStorage("prefAxisMinY-probability") private var probabilityMinY = 0
+    @AppStorage("prefAxisMaxY-probability") private var probabilityMaxY = 12
 
-    private let range = 0...12
     @State private var activeCell: ProbabilityCellData?
 
     var body: some View {
@@ -36,15 +39,15 @@ struct ProbabilityGridView: View {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         headerCell("x/y")
-                        ForEach(range, id: \.self) { value in
+                        ForEach(valuesY, id: \.self) { value in
                             headerCell(NumberFormatting.string(from: value), value: value)
                         }
                     }
 
-                    ForEach(range, id: \.self) { threshold in
+                    ForEach(valuesX, id: \.self) { threshold in
                         HStack(spacing: 8) {
                             headerCell(">= \(NumberFormatting.string(from: threshold))", value: threshold)
-                            ForEach(range, id: \.self) { throwCount in
+                            ForEach(valuesY, id: \.self) { throwCount in
                                 ProbabilityGridCell(
                                     label: probabilityLabel(threshold: threshold, trials: throwCount),
                                     numberStyle: numberStyle,
@@ -70,7 +73,24 @@ struct ProbabilityGridView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .sheet(item: $activeCell) { cell in
-            ProbabilityExplanationSheet(cell: cell, format: format, numberStyle: numberStyle)
+            ProbabilityExplanationSheet(
+                cell: cell,
+                rowValues: valuesX,
+                columnValues: valuesY,
+                format: format,
+                numberStyle: numberStyle,
+                onNavigate: { newThreshold, newTrials in
+                    guard newThreshold <= newTrials else { return }
+                    activeCell = ProbabilityCellData(
+                        threshold: newThreshold,
+                        trials: newTrials,
+                        successName: successName,
+                        trialsName: trialsName,
+                        successOutcomes: successOutcomes,
+                        totalOutcomes: totalOutcomes
+                    )
+                }
+            )
         }
     }
 
@@ -87,6 +107,23 @@ struct ProbabilityGridView: View {
             .foregroundColor(color)
             .background(Color(.tertiarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var valuesX: [Int] {
+        normalizedRange(minValue: probabilityMinX, maxValue: probabilityMaxX)
+    }
+
+    private var valuesY: [Int] {
+        normalizedRange(minValue: probabilityMinY, maxValue: probabilityMaxY)
+    }
+
+    private func normalizedRange(minValue: Int, maxValue: Int) -> [Int] {
+        let lower = min(max(minValue, 0), 12)
+        let upper = min(max(maxValue, 0), 12)
+        if lower <= upper {
+            return Array(lower...upper)
+        }
+        return Array(upper...lower)
     }
 
     private func probabilityLabel(threshold: Int, trials: Int) -> String {
@@ -149,8 +186,11 @@ struct ProbabilityCellData: Identifiable {
 
 struct ProbabilityExplanationSheet: View {
     let cell: ProbabilityCellData
+    let rowValues: [Int]
+    let columnValues: [Int]
     let format: ProbabilityFormat
     let numberStyle: NumberStyle
+    let onNavigate: (Int, Int) -> Void
 
     private var fraction: Fraction {
         Probability.atLeastSuccesses(
@@ -170,49 +210,58 @@ struct ProbabilityExplanationSheet: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("At least \(NumberFormatting.string(from: cell.threshold)) \(cell.successName) after \(NumberFormatting.string(from: cell.trials)) \(cell.trialsName)")
-                    .font(numberStyle.font(size: 22, weight: .semibold))
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("At least \(NumberFormatting.string(from: cell.threshold)) \(cell.successName) after \(NumberFormatting.string(from: cell.trials)) \(cell.trialsName)")
+                        .font(numberStyle.font(size: 22, weight: .semibold))
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Success rate")
-                        .font(.headline)
-                    Text("\(NumberFormatting.string(from: cell.successOutcomes))/\(NumberFormatting.string(from: cell.totalOutcomes)) per \(singularTrialsName)")
-                        .font(numberStyle.font(size: 16, weight: .semibold))
-                        .foregroundColor(.secondary)
-                }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Success rate")
+                            .font(.headline)
+                        Text("\(NumberFormatting.string(from: cell.successOutcomes))/\(NumberFormatting.string(from: cell.totalOutcomes)) per \(singularTrialsName)")
+                            .font(numberStyle.font(size: 16, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Exact fraction")
-                        .font(.headline)
-                    Text("\(numerator)/\(denominator)")
-                        .font(numberStyle.font(size: 20, weight: .semibold))
-                }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Exact fraction")
+                            .font(.headline)
+                        Text("\(numerator)/\(denominator)")
+                            .font(numberStyle.font(size: 20, weight: .semibold))
+                    }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Formula")
-                        .font(.headline)
-                    Text("∑ C(\(NumberFormatting.string(from: cell.trials)), k) × \(NumberFormatting.string(from: cell.successOutcomes))^k × \(NumberFormatting.string(from: failureOutcomes))^(\(NumberFormatting.string(from: cell.trials))−k)")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                    Text("k = \(NumberFormatting.string(from: cell.threshold)) ... \(NumberFormatting.string(from: cell.trials))")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                    Text("Divide by \(NumberFormatting.string(from: cell.totalOutcomes))^\(NumberFormatting.string(from: cell.trials))")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Formula")
+                            .font(.headline)
+                        Text("∑ C(\(NumberFormatting.string(from: cell.trials)), k) × \(NumberFormatting.string(from: cell.successOutcomes))^k × \(NumberFormatting.string(from: failureOutcomes))^(\(NumberFormatting.string(from: cell.trials))−k)")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Text("k = \(NumberFormatting.string(from: cell.threshold)) ... \(NumberFormatting.string(from: cell.trials))")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Text("Divide by \(NumberFormatting.string(from: cell.totalOutcomes))^\(NumberFormatting.string(from: cell.trials))")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Decimal")
-                        .font(.headline)
-                    Text(decimalString)
-                        .font(numberStyle.font(size: 18, weight: .semibold))
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Decimal")
+                            .font(.headline)
+                        Text(decimalString)
+                            .font(numberStyle.font(size: 18, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
                 }
+                .padding()
             }
-            .padding()
+            ProbabilityExplanationArrows(
+                threshold: cell.threshold,
+                trials: cell.trials,
+                rowValues: rowValues,
+                columnValues: columnValues,
+                onNavigate: onNavigate
+            )
         }
     }
 
