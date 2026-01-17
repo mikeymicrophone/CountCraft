@@ -12,7 +12,7 @@ struct SetExplanationView: View {
     let maxElement: Int
     let numberStyle: NumberStyle
 
-    private let displayLimit = 32
+    private let listMaxHeight: CGFloat = 300
 
     var body: some View {
         VStack(spacing: 16) {
@@ -54,7 +54,8 @@ struct SetExplanationView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(maxWidth: .infinity, maxHeight: listMaxHeight, alignment: .center)
+                .scrollIndicators(.visible)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -67,6 +68,11 @@ struct SetExplanationView: View {
 
     private var totalCount: Int {
         Combinatorics.choose(n: maxElement + 1, k: setSize)
+    }
+
+    private var displayLimit: Int {
+        let maxDisplay = 600
+        return min(totalCount, maxDisplay)
     }
 
     private var displayedSubsets: [[Int]] {
