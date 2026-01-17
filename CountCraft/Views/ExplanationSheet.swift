@@ -23,8 +23,7 @@ struct ExplanationSheet: View {
                 ExplanationHeaderView(
                     operation: operation,
                     fact: fact,
-                    numberFont: numberFont,
-                    numberColor: numberColor
+                    numberStyle: numberStyle
                 )
                 ZStack {
                     explanationContent
@@ -48,7 +47,7 @@ struct ExplanationSheet: View {
         HStack(alignment: .top, spacing: 16) {
             bankColumn(label: NumberFormatting.string(from: fact.a), value: fact.a)
             Text("+")
-                .font(numberFont(size: 24, weight: .semibold))
+                .font(numberStyle.font(size: 24, weight: .semibold))
                 .foregroundColor(.secondary)
             bankColumn(label: NumberFormatting.string(from: fact.b), value: fact.b)
         }
@@ -59,8 +58,8 @@ struct ExplanationSheet: View {
         ExponentExplanationView(
             base: fact.a,
             exponent: fact.b,
-            color: numberColor(for: fact.a) ?? .blue,
-            numberFont: numberFont
+            color: numberStyle.color(for: fact.a) ?? .blue,
+            numberStyle: numberStyle
         )
     }
 
@@ -83,13 +82,13 @@ struct ExplanationSheet: View {
         VStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("\(NumberFormatting.string(from: fact.a)) Groups of \(NumberFormatting.string(from: fact.b))")
-                    .font(numberFont(size: 18, weight: .semibold))
+                    .font(numberStyle.font(size: 18, weight: .semibold))
                 LazyVGrid(columns: bankColumns, spacing: 10) {
                     ForEach(0..<max(fact.a, 1), id: \.self) { index in
                         FitSquareGrid(
                             count: fact.b,
                             columns: gridColumns(for: fact.b),
-                            color: numberColor(for: fact.b) ?? .secondary,
+                            color: numberStyle.secondaryColor(for: fact.b),
                             spacing: 4
                         )
                         .frame(width: 80, height: 80)
@@ -101,11 +100,11 @@ struct ExplanationSheet: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Grid \(NumberFormatting.string(from: fact.a)) × \(NumberFormatting.string(from: fact.b))")
-                    .font(numberFont(size: 18, weight: .semibold))
+                    .font(numberStyle.font(size: 18, weight: .semibold))
                 FitSquareGrid(
                     count: fact.a * fact.b,
                     columns: max(fact.b, 1),
-                    color: numberColor(for: fact.a) ?? .secondary,
+                    color: numberStyle.secondaryColor(for: fact.a),
                     spacing: 3
                 )
                 .frame(maxWidth: 260, minHeight: 160)
@@ -117,12 +116,12 @@ struct ExplanationSheet: View {
     private func bankColumn(label: String, value: Int) -> some View {
         VStack(spacing: 8) {
             Text(label)
-                .font(numberFont(size: 18, weight: .semibold))
-                .foregroundColor(numberColor(for: value) ?? .primary)
+                .font(numberStyle.font(size: 18, weight: .semibold))
+                .foregroundColor(numberStyle.primaryColor(for: value))
             FitSquareGrid(
                 count: value,
                 columns: gridColumns(for: value),
-                color: numberColor(for: value) ?? .secondary,
+                color: numberStyle.secondaryColor(for: value),
                 spacing: 4
             )
             .frame(width: 100, height: 100)
@@ -137,11 +136,7 @@ struct ExplanationSheet: View {
         NumberFontChoice(rawValue: numberFontRaw) ?? .rounded
     }
 
-    private func numberFont(size: CGFloat, weight: Font.Weight) -> Font {
-        numberFontChoice.font(size: size, weight: weight)
-    }
-
-    private func numberColor(for value: Int) -> Color? {
-        NumberStyling.color(for: value, enabled: colorCodedNumbers)
+    private var numberStyle: NumberStyle {
+        NumberStyle(fontChoice: numberFontChoice, colorCoded: colorCodedNumbers)
     }
 }

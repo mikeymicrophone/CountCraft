@@ -1,0 +1,82 @@
+//
+//  TablePracticeGridView.swift
+//  CountCraft
+//
+//  Created by Mike Schwab on 1/17/26.
+//
+
+import SwiftUI
+
+struct TablePracticeGridView: View {
+    let operation: OperationType
+    let rowValues: [Int]
+    let columnValues: [Int]
+    let statsByFact: [FactKey: FactStats]
+    let answersShown: Bool
+    let numberStyle: NumberStyle
+    let onSelectFact: (MathFact) -> Void
+
+    var body: some View {
+        ScrollView([.vertical, .horizontal]) {
+            LazyVStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    headerCell("")
+                    ForEach(columnValues, id: \.self) { value in
+                        headerCell("\(value)", value: value)
+                    }
+                }
+
+                ForEach(rowValues, id: \.self) { row in
+                    HStack(spacing: 8) {
+                        headerCell("\(row)", value: row)
+                        ForEach(columnValues, id: \.self) { column in
+                            let fact = MathFact(a: row, b: column)
+                            let stats = statsByFact[FactKey(a: row, b: column)]
+                            let answer = operation.answer(for: fact)
+                            let answerLabel = NumberFormatting.string(from: answer)
+                            let cellFontSize = fontSize(for: answerLabel)
+                            Button {
+                                onSelectFact(fact)
+                            } label: {
+                                FactCell(
+                                    label: answersShown ? answerLabel : "?",
+                                    status: stats,
+                                    isInteractive: !answersShown,
+                                    numberFont: numberStyle.font(size: cellFontSize)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .padding(.bottom, 8)
+        }
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func headerCell(_ text: String, value: Int? = nil) -> some View {
+        let color = value.flatMap { numberStyle.color(for: $0) } ?? .primary
+        return Text(text)
+            .font(numberStyle.font(size: 16))
+            .frame(width: 44, height: 44)
+            .foregroundColor(color)
+            .background(Color(.tertiarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func fontSize(for label: String) -> CGFloat {
+        let length = label.count
+        if length <= 3 {
+            return 16
+        }
+        if length == 4 {
+            return 14
+        }
+        if length == 5 {
+            return 12
+        }
+        return 10
+    }
+}

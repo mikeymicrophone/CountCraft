@@ -10,11 +10,12 @@ import SwiftUI
 struct ReviewGuessRow: View {
     let guess: PracticeGuess
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
+    @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
 
     var body: some View {
         HStack(spacing: 12) {
             Text(NumberFormatting.string(from: guess.a))
-                .foregroundColor(numberColor(for: guess.a) ?? .primary)
+                .foregroundColor(numberStyle.primaryColor(for: guess.a))
                 .frame(width: ReviewColumns.operand, alignment: .leading)
 
             Text(operationSymbol)
@@ -22,7 +23,7 @@ struct ReviewGuessRow: View {
                 .frame(width: ReviewColumns.operatorSymbol, alignment: .center)
 
             Text(NumberFormatting.string(from: guess.b))
-                .foregroundColor(numberColor(for: guess.b) ?? .primary)
+                .foregroundColor(numberStyle.primaryColor(for: guess.b))
                 .frame(width: ReviewColumns.operand, alignment: .leading)
 
             Text(guessAnswerText)
@@ -30,7 +31,7 @@ struct ReviewGuessRow: View {
                 .frame(width: ReviewColumns.guess, alignment: .leading)
 
             Text(NumberFormatting.string(from: guess.correctAnswer))
-                .foregroundColor(numberColor(for: guess.correctAnswer) ?? .primary)
+                .foregroundColor(numberStyle.primaryColor(for: guess.correctAnswer))
                 .frame(width: ReviewColumns.answer, alignment: .leading)
 
             Image(systemName: guess.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
@@ -64,12 +65,15 @@ struct ReviewGuessRow: View {
         OperationType(rawValue: guess.operation)?.symbol ?? "?"
     }
 
-    private func numberColor(for value: Int) -> Color? {
-        NumberStyling.color(for: value, enabled: colorCodedNumbers)
-    }
-
     private var guessAnswerColor: Color {
         guard let answer = guess.userAnswer else { return .secondary }
-        return numberColor(for: answer) ?? .primary
+        return numberStyle.primaryColor(for: answer)
+    }
+
+    private var numberStyle: NumberStyle {
+        NumberStyle(
+            fontChoice: NumberFontChoice(rawValue: numberFontRaw) ?? .rounded,
+            colorCoded: colorCodedNumbers
+        )
     }
 }

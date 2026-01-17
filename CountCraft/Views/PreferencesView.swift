@@ -26,84 +26,43 @@ struct PreferencesView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Profiles") {
-                    ForEach(profiles) { profile in
-                        HStack(spacing: 12) {
-                            TextField("Profile name", text: profileNameBinding(for: profile))
-                            Spacer()
-                            Button {
-                                selectedProfileId = profile.id.uuidString
-                            } label: {
-                                Image(systemName: profile.id.uuidString == selectedProfileId ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(profile.id.uuidString == selectedProfileId ? .accentColor : .secondary)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                PreferencesProfilesSection(
+                    profiles: profiles,
+                    selectedProfileId: selectedProfileId,
+                    newProfileName: $newProfileName,
+                    onSelectProfile: { profile in
+                        selectedProfileId = profile.id.uuidString
+                    },
+                    onAddProfile: addProfile,
+                    nameBinding: profileNameBinding
+                )
 
-                    HStack(spacing: 8) {
-                        TextField("New profile name", text: $newProfileName)
-                        Button("Add") {
-                            addProfile()
-                        }
-                        .disabled(newProfileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                }
+                PreferencesNumbersSection(
+                    colorCodedNumbers: $colorCodedNumbers,
+                    hintsShown: $hintsShown,
+                    numberFontRaw: $numberFontRaw
+                )
 
-                Section("Numbers") {
-                    Toggle("Color-code 0–12", isOn: $colorCodedNumbers)
-                    Toggle("Hints Shown", isOn: $hintsShown)
+                PreferencesMultipleChoiceSection(
+                    difficultyRaw: $difficultyRaw,
+                    description: difficultyDescription
+                )
 
-                    Picker("Number Font", selection: $numberFontRaw) {
-                        ForEach(NumberFontChoice.allCases) { choice in
-                            Text(choice.title).tag(choice.rawValue)
-                        }
-                    }
-                }
-
-                Section("Multiple Choice") {
-                    Picker("Challenge Level", selection: $difficultyRaw) {
-                        ForEach(ChoiceDifficulty.allCases) { difficulty in
-                            Text(difficulty.title).tag(difficulty.rawValue)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    Text(difficultyDescription)
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
-
-                Section("Table Range") {
-                    Picker("Table", selection: $selectedOperation) {
-                        ForEach(OperationType.allCases) { operation in
-                            Text(operation.title).tag(operation)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    RangeSlider(
-                        label: "X:",
-                        lowerValue: axisMinXBinding,
-                        upperValue: axisMaxXBinding,
-                        bounds: 0...12,
-                        showsTickLabels: true
-                    ) {
+                PreferencesTableRangeSection(
+                    selectedOperation: $selectedOperation,
+                    axisMinXBinding: axisMinXBinding,
+                    axisMaxXBinding: axisMaxXBinding,
+                    axisMinYBinding: axisMinYBinding,
+                    axisMaxYBinding: axisMaxYBinding,
+                    onResetX: {
                         setAxisMinX(0)
                         setAxisMaxX(12)
-                    }
-
-                    RangeSlider(
-                        label: "Y:",
-                        lowerValue: axisMinYBinding,
-                        upperValue: axisMaxYBinding,
-                        bounds: 0...12,
-                        showsTickLabels: true
-                    ) {
+                    },
+                    onResetY: {
                         setAxisMinY(0)
                         setAxisMaxY(12)
                     }
-                }
+                )
             }
             .navigationTitle("Preferences")
             .toolbar {

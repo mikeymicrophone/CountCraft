@@ -1,52 +1,11 @@
 //
-//  PracticeModels.swift
+//  PracticeMath.swift
 //  CountCraft
 //
-//  Created by Mike Schwab on 1/16/26.
+//  Created by Mike Schwab on 1/17/26.
 //
 
 import Foundation
-import SwiftUI
-
-struct MathFact: Identifiable, Hashable {
-    let a: Int
-    let b: Int
-
-    var id: String { "\(a)-\(b)" }
-}
-
-struct FactKey: Hashable {
-    let a: Int
-    let b: Int
-}
-
-struct FactStats {
-    var attempts: Int = 0
-    var correct: Int = 0
-    var lastWasCorrect: Bool?
-
-    var accuracy: Double {
-        attempts == 0 ? 0 : Double(correct) / Double(attempts)
-    }
-
-    var isMastered: Bool {
-        attempts >= 5 && accuracy >= 0.8
-    }
-
-    mutating func add(guess: PracticeGuess) {
-        attempts += 1
-        if guess.isCorrect {
-            correct += 1
-        }
-        lastWasCorrect = guess.isCorrect
-    }
-
-    func adding(guess: PracticeGuess) -> FactStats {
-        var copy = self
-        copy.add(guess: guess)
-        return copy
-    }
-}
 
 struct PracticeMath {
     static func multipleChoiceOptions(
@@ -187,52 +146,5 @@ struct PracticeMath {
         }
 
         return candidate
-    }
-}
-
-struct NumberFormatting {
-    static func string(from value: Int) -> String {
-        formatter.string(from: NSNumber(value: value)) ?? "\(value)"
-    }
-
-    private static let formatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = ","
-        return formatter
-    }()
-}
-
-struct NumberStyling {
-    static let palette: [Color] = [
-        .red, .orange, .yellow, .green, .mint, .pink, .cyan,
-        .blue, .indigo, .purple, .teal, .brown, .gray
-    ]
-
-    static func color(for value: Int, enabled: Bool) -> Color? {
-        guard enabled, (0...12).contains(value) else { return nil }
-        return palette[value % palette.count]
-    }
-}
-
-extension OperationType {
-    func answer(for fact: MathFact) -> Int {
-        switch self {
-        case .addition:
-            return fact.a + fact.b
-        case .multiplication:
-            return fact.a * fact.b
-        case .exponent:
-            return integerPower(base: fact.a, exponent: fact.b)
-        }
-    }
-
-    private func integerPower(base: Int, exponent: Int) -> Int {
-        guard exponent > 0 else { return exponent == 0 ? 1 : 0 }
-        var result = 1
-        for _ in 0..<exponent {
-            result *= base
-        }
-        return result
     }
 }

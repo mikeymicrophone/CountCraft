@@ -10,8 +10,7 @@ import SwiftUI
 struct ExplanationHeaderView: View {
     let operation: OperationType
     let fact: MathFact
-    let numberFont: (CGFloat, Font.Weight) -> Font
-    let numberColor: (Int) -> Color?
+    let numberStyle: NumberStyle
 
     var body: some View {
         if operation == .exponent {
@@ -22,30 +21,30 @@ struct ExplanationHeaderView: View {
                     baseSize: 28,
                     exponentSize: 18,
                     exponentOffset: 12,
-                    baseColor: numberColor(fact.a) ?? .primary,
-                    exponentColor: numberColor(fact.b) ?? .primary
+                    baseColor: numberStyle.primaryColor(for: fact.a),
+                    exponentColor: numberStyle.primaryColor(for: fact.b)
                 )
                 Text("=")
                     .foregroundColor(.secondary)
-                    .font(numberFont(28, .semibold))
+                    .font(numberStyle.font(size: 28, weight: .semibold))
                 Text(NumberFormatting.string(from: operation.answer(for: fact)))
-                    .foregroundColor(numberColor(operation.answer(for: fact)) ?? .primary)
-                    .font(numberFont(28, .semibold))
+                    .foregroundColor(numberStyle.primaryColor(for: operation.answer(for: fact)))
+                    .font(numberStyle.font(size: 28, weight: .semibold))
             }
         } else {
             HStack(spacing: 8) {
                 Text(NumberFormatting.string(from: fact.a))
-                    .foregroundColor(numberColor(fact.a) ?? .primary)
+                    .foregroundColor(numberStyle.primaryColor(for: fact.a))
                 Text(operation.symbol)
                     .foregroundColor(.secondary)
                 Text(NumberFormatting.string(from: fact.b))
-                    .foregroundColor(numberColor(fact.b) ?? .primary)
+                    .foregroundColor(numberStyle.primaryColor(for: fact.b))
                 Text("=")
                     .foregroundColor(.secondary)
                 Text(NumberFormatting.string(from: operation.answer(for: fact)))
-                    .foregroundColor(numberColor(operation.answer(for: fact)) ?? .primary)
+                    .foregroundColor(numberStyle.primaryColor(for: operation.answer(for: fact)))
             }
-            .font(numberFont(28, .semibold))
+            .font(numberStyle.font(size: 28, weight: .semibold))
         }
     }
 
@@ -61,10 +60,10 @@ struct ExplanationHeaderView: View {
         HStack(alignment: .firstTextBaseline, spacing: 2) {
             Text(NumberFormatting.string(from: base))
                 .foregroundColor(baseColor)
-                .font(numberFont(baseSize, .semibold))
+                .font(numberStyle.font(size: baseSize, weight: .semibold))
             Text(NumberFormatting.string(from: exponent))
                 .foregroundColor(exponentColor)
-                .font(numberFont(exponentSize, .semibold))
+                .font(numberStyle.font(size: exponentSize, weight: .semibold))
                 .baselineOffset(exponentOffset)
         }
     }

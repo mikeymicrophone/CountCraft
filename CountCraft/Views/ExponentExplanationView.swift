@@ -11,7 +11,7 @@ struct ExponentExplanationView: View {
     let base: Int
     let exponent: Int
     let color: Color
-    let numberFont: (CGFloat, Font.Weight) -> Font
+    let numberStyle: NumberStyle
 
     @State private var currentStep: Int?
     @State private var isPlaying: Bool = false
@@ -61,7 +61,7 @@ struct ExponentExplanationView: View {
     var body: some View {
         VStack(spacing: 16) {
             Text(labelForStep(step))
-                .font(numberFont(18, .semibold))
+                .font(numberStyle.font(size: 18, weight: .semibold))
                 .animation(.none, value: step)
 
             HStack(spacing: 12) {
