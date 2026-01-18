@@ -258,6 +258,9 @@ struct ProbabilityExplanationSheet: View {
                         Text("k = \(NumberFormatting.string(from: cell.threshold)) ... \(NumberFormatting.string(from: cell.trials))")
                             .font(.footnote)
                             .foregroundColor(.secondary)
+                        if canJumpToSets {
+                            combinationsGrid
+                        }
                         if let expandedLine {
                             Text(expandedLine)
                                 .font(.footnote)
@@ -466,6 +469,37 @@ struct ProbabilityExplanationSheet: View {
         cell.totalOutcomes <= 12 && onSwitchOperation != nil
     }
 
+    private var canJumpToSets: Bool {
+        onSwitchOperation != nil && cell.trials >= 0 && cell.threshold <= cell.trials
+    }
+
+    private var combinationValues: [Int] {
+        guard cell.threshold <= cell.trials else { return [] }
+        return Array(cell.threshold...cell.trials)
+    }
+
+    private var combinationsGrid: some View {
+        let columns = [GridItem(.adaptive(minimum: 84), spacing: 8)]
+        return LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(combinationValues, id: \.self) { k in
+                Button {
+                    dismiss()
+                    let maxElement = max(cell.trials - 1, 0)
+                    onSwitchOperation?(.sets, MathFact(a: k, b: maxElement))
+                } label: {
+                    Text("C(\(NumberFormatting.string(from: cell.trials)), \(NumberFormatting.string(from: k)))")
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color(.systemGray5))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(.purple)
+            }
+        }
+    }
+
     @ViewBuilder
     private var denominatorView: some View {
         if canJumpToExponent {
@@ -477,7 +511,7 @@ struct ProbabilityExplanationSheet: View {
                     .font(.footnote)
             }
             .buttonStyle(.plain)
-            .foregroundColor(.accentColor)
+            .foregroundColor(.purple)
         } else {
             Text(denominatorLine)
                 .font(.footnote)
