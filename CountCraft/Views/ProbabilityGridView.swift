@@ -214,7 +214,7 @@ struct ProbabilityExplanationSheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Success rate")
                             .font(.headline)
-                    Text("\(NumberFormatting.string(from: cell.successOutcomes))/\(NumberFormatting.string(from: cell.totalOutcomes)) per \(singularTrialsName)")
+                        Text("\(NumberFormatting.string(from: cell.successOutcomes))/\(NumberFormatting.string(from: cell.totalOutcomes)) per \(singularTrialsName)")
                             .font(numberStyle.font(size: 16, weight: .semibold))
                             .foregroundColor(.secondary)
                     }
@@ -222,9 +222,9 @@ struct ProbabilityExplanationSheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Exact fraction")
                             .font(.headline)
-                    Text("\(numerator)/\(denominator)")
-                        .font(numberStyle.font(size: 20, weight: .semibold))
-                        .foregroundColor(.primary)
+                        Text("\(numerator)/\(denominator)")
+                            .font(numberStyle.font(size: 20, weight: .semibold))
+                            .foregroundColor(.primary)
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -236,6 +236,16 @@ struct ProbabilityExplanationSheet: View {
                         Text("k = \(NumberFormatting.string(from: cell.threshold)) ... \(NumberFormatting.string(from: cell.trials))")
                             .font(.footnote)
                             .foregroundColor(.secondary)
+                        if let expandedLine {
+                            Text(expandedLine)
+                                .font(.footnote)
+                                .foregroundColor(.accentColor)
+                        }
+                        if let resolvedLine {
+                            Text(resolvedLine)
+                                .font(.footnote)
+                                .foregroundColor(.accentColor)
+                        }
                         Text(denominatorLine)
                             .font(.footnote)
                             .foregroundColor(.secondary)
@@ -255,7 +265,7 @@ struct ProbabilityExplanationSheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Decimal")
                             .font(.headline)
-                    Text(decimalString)
+                        Text(decimalString)
                             .font(numberStyle.font(size: 18, weight: .semibold))
                             .foregroundColor(.secondary)
                     }
@@ -356,8 +366,42 @@ struct ProbabilityExplanationSheet: View {
     }
 
     private var approximationText: String {
-        let denom = approximateUnitFractionDenominator(value: fraction.value)
-        return "1/\(NumberFormatting.string(from: denom))"
+        let approximation = approximateFraction(value: fraction.value)
+        let numerator = NumberFormatting.string(from: approximation.numerator)
+        let denominator = NumberFormatting.string(from: approximation.denominator)
+        return "\(numerator)/\(denominator)"
+    }
+
+    private var expandedLine: AttributedString? {
+        guard cell.threshold <= cell.trials else { return nil }
+        var result = AttributedString("")
+        var isFirst = true
+        for k in cell.threshold...cell.trials {
+            if !isFirst {
+                result.append(AttributedString(" + "))
+            }
+            isFirst = false
+            result.append(AttributedString("C(\(NumberFormatting.string(from: cell.trials)), \(NumberFormatting.string(from: k))) × "))
+            result.append(exponent(base: cell.successOutcomes, power: NumberFormatting.string(from: k)))
+            result.append(AttributedString(" × "))
+            result.append(exponent(base: failureOutcomes, power: NumberFormatting.string(from: cell.trials - k)))
+        }
+        return result
+    }
+
+    private var resolvedLine: String? {
+        guard cell.threshold <= cell.trials else { return nil }
+        var parts: [String] = []
+        for k in cell.threshold...cell.trials {
+            let chooseValue = Combinatorics.choose(n: cell.trials, k: k)
+            let successPower = decimalPow(base: cell.successOutcomes, exponent: k)
+            let failurePower = decimalPow(base: failureOutcomes, exponent: cell.trials - k)
+            let chooseString = NumberFormatting.string(from: chooseValue)
+            let successString = NumberFormatting.string(from: successPower)
+            let failureString = NumberFormatting.string(from: failurePower)
+            parts.append("\(chooseString) × \(successString) × \(failureString)")
+        }
+        return parts.joined(separator: " + ")
     }
 
     private var exampleLine: AttributedString? {
@@ -370,9 +414,31 @@ struct ProbabilityExplanationSheet: View {
         return result
     }
 
-    private func approximateUnitFractionDenominator(value: Double) -> Int {
-        guard value > 0 else { return 1 }
-        let denom = Int(round(1.0 / value))
-        return max(1, denom)
+    private func decimalPow(base: Int, exponent: Int) -> Decimal {
+        guard exponent > 0 else { return exponent == 0 ? 1 : 0 }
+        var result = Decimal(1)
+        let baseDecimal = Decimal(base)
+        for _ in 0..<exponent {
+            result *= baseDecimal
+        }
+        return result
+    }
+
+    private func approximateFraction(value: Double) -> (numerator: Int, denominator: Int) {
+        guard value > 0 else { return (0, 1) }
+        guard value < 1 else { return (1, 1) }
+
+        let unitDenominator = max(1, Int(round(1.0 / value)))
+        let unitValue = 1.0 / Double(unitDenominator)
+        let complementDenominator = max(1, Int(round(1.0 / (1.0 - value))))
+        let complementValue = 1.0 - 1.0 / Double(complementDenominator)
+
+        let unitError = abs(unitValue - value)
+        let complementError = abs(complementValue - value)
+
+        if complementError < unitError {
+            return (max(complementDenominator - 1, 0), complementDenominator)
+        }
+        return (1, unitDenominator)
     }
 }
