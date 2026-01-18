@@ -11,6 +11,11 @@ struct ProbabilityView: View {
     @State private var mode: ProbabilityMode = .dice
     @State private var format: ProbabilityFormat = .fraction
     @State private var showingPreferences = false
+    let onSwitchOperation: ((OperationType, MathFact) -> Void)?
+
+    init(onSwitchOperation: ((OperationType, MathFact) -> Void)? = nil) {
+        self.onSwitchOperation = onSwitchOperation
+    }
 
     var body: some View {
         NavigationStack {
@@ -39,7 +44,8 @@ struct ProbabilityView: View {
                         trialsName: "rolls",
                         successOutcomes: 1,
                         totalOutcomes: 6,
-                        format: format
+                        format: format,
+                        onSwitchOperation: onSwitchOperation
                     )
                 case .coin:
                     ProbabilityGridView(
@@ -48,10 +54,11 @@ struct ProbabilityView: View {
                         trialsName: "flips",
                         successOutcomes: 1,
                         totalOutcomes: 2,
-                        format: format
+                        format: format,
+                        onSwitchOperation: onSwitchOperation
                     )
                 case .cards:
-                    ProbabilityCardsGridView(format: format)
+                    ProbabilityCardsGridView(format: format, onSwitchOperation: onSwitchOperation)
                 }
 
                 Spacer(minLength: 0)

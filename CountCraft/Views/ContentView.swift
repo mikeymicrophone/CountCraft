@@ -70,7 +70,7 @@ struct ContentView: View {
                 }
                 .tag(TabSelection.sets)
 
-            ProbabilityView()
+            ProbabilityView(onSwitchOperation: switchOperation)
                 .tabItem {
                     Label("Probability", systemImage: "chart.bar.xaxis")
                 }

@@ -14,6 +14,7 @@ struct ProbabilityGridView: View {
     let successOutcomes: Int
     let totalOutcomes: Int
     let format: ProbabilityFormat
+    let onSwitchOperation: ((OperationType, MathFact) -> Void)?
     @AppStorage("prefColorCodedNumbers") private var colorCodedNumbers = false
     @AppStorage("prefNumberFont") private var numberFontRaw = NumberFontChoice.rounded.rawValue
     @AppStorage("prefAxisMinX-probability") private var probabilityMinX = 0
@@ -22,6 +23,24 @@ struct ProbabilityGridView: View {
     @AppStorage("prefAxisMaxY-probability") private var probabilityMaxY = 12
 
     @State private var activeCell: ProbabilityCellData?
+
+    init(
+        title: String,
+        successName: String,
+        trialsName: String,
+        successOutcomes: Int,
+        totalOutcomes: Int,
+        format: ProbabilityFormat,
+        onSwitchOperation: ((OperationType, MathFact) -> Void)? = nil
+    ) {
+        self.title = title
+        self.successName = successName
+        self.trialsName = trialsName
+        self.successOutcomes = successOutcomes
+        self.totalOutcomes = totalOutcomes
+        self.format = format
+        self.onSwitchOperation = onSwitchOperation
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -83,7 +102,8 @@ struct ProbabilityGridView: View {
                         successOutcomes: successOutcomes,
                         totalOutcomes: totalOutcomes
                     )
-                }
+                },
+                onSwitchOperation: onSwitchOperation
             )
         }
     }
@@ -185,6 +205,8 @@ struct ProbabilityExplanationSheet: View {
     let format: ProbabilityFormat
     let numberStyle: NumberStyle
     let onNavigate: (Int, Int) -> Void
+    let onSwitchOperation: ((OperationType, MathFact) -> Void)?
+    @Environment(\.dismiss) private var dismiss
 
     private var fraction: Fraction {
         Probability.atLeastSuccesses(
@@ -246,9 +268,7 @@ struct ProbabilityExplanationSheet: View {
                                 .font(.footnote)
                                 .foregroundColor(.accentColor)
                         }
-                        Text(denominatorLine)
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
+                        denominatorView
                         Text("Numerator = \(numerator)")
                             .font(numberStyle.font(size: 16, weight: .semibold))
                             .foregroundColor(.accentColor)
@@ -399,7 +419,7 @@ struct ProbabilityExplanationSheet: View {
             let chooseString = NumberFormatting.string(from: chooseValue)
             let successString = NumberFormatting.string(from: successPower)
             let failureString = NumberFormatting.string(from: failurePower)
-            parts.append("\(chooseString) × \(successString) × \(failureString)")
+            parts.append("(\(chooseString) × \(successString) × \(failureString))")
         }
         return parts.joined(separator: " + ")
     }
@@ -440,5 +460,28 @@ struct ProbabilityExplanationSheet: View {
             return (max(complementDenominator - 1, 0), complementDenominator)
         }
         return (1, unitDenominator)
+    }
+
+    private var canJumpToExponent: Bool {
+        cell.totalOutcomes <= 12 && onSwitchOperation != nil
+    }
+
+    @ViewBuilder
+    private var denominatorView: some View {
+        if canJumpToExponent {
+            Button {
+                dismiss()
+                onSwitchOperation?(.exponent, MathFact(a: cell.totalOutcomes, b: cell.trials))
+            } label: {
+                Text(denominatorLine)
+                    .font(.footnote)
+            }
+            .buttonStyle(.plain)
+            .foregroundColor(.accentColor)
+        } else {
+            Text(denominatorLine)
+                .font(.footnote)
+                .foregroundColor(.secondary)
+        }
     }
 }

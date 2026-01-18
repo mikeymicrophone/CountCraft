@@ -9,7 +9,13 @@ import SwiftUI
 
 struct ProbabilityCardsGridView: View {
     let format: ProbabilityFormat
+    let onSwitchOperation: ((OperationType, MathFact) -> Void)?
     @State private var focus: CardFocus = .face
+
+    init(format: ProbabilityFormat, onSwitchOperation: ((OperationType, MathFact) -> Void)? = nil) {
+        self.format = format
+        self.onSwitchOperation = onSwitchOperation
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -26,7 +32,8 @@ struct ProbabilityCardsGridView: View {
                 trialsName: "pulls",
                 successOutcomes: focus.successOutcomes,
                 totalOutcomes: 52,
-                format: format
+                format: format,
+                onSwitchOperation: onSwitchOperation
             )
         }
     }
