@@ -34,8 +34,7 @@ struct ProbabilityView: View {
                 switch mode {
                 case .dice:
                     ProbabilityGridView(
-                        title: "At least x sixes after y rolls",
-                        rowLabel: "Rows: x (sixes). Columns: y (rolls).",
+                        title: "At least y sixes after x rolls",
                         successName: "sixes",
                         trialsName: "rolls",
                         successOutcomes: 1,
@@ -44,8 +43,7 @@ struct ProbabilityView: View {
                     )
                 case .coin:
                     ProbabilityGridView(
-                        title: "At least x heads after y flips",
-                        rowLabel: "Rows: x (heads). Columns: y (flips).",
+                        title: "At least y heads after x flips",
                         successName: "heads",
                         trialsName: "flips",
                         successOutcomes: 1,

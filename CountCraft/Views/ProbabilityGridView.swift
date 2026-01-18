@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ProbabilityGridView: View {
     let title: String
-    let rowLabel: String
     let successName: String
     let trialsName: String
     let successOutcomes: Int
@@ -28,11 +27,6 @@ struct ProbabilityGridView: View {
         VStack(spacing: 12) {
             Text(title)
                 .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(rowLabel)
-                .font(.footnote)
-                .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             ScrollView([.horizontal, .vertical]) {
@@ -213,13 +207,14 @@ struct ProbabilityExplanationSheet: View {
         ZStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("At least \(NumberFormatting.string(from: cell.threshold)) \(cell.successName) after \(NumberFormatting.string(from: cell.trials)) \(cell.trialsName)")
+                    Text("At least \(NumberFormatting.string(from: cell.threshold)) \(successLabel) after \(NumberFormatting.string(from: cell.trials)) \(trialsLabel)")
                         .font(numberStyle.font(size: 22, weight: .semibold))
+                        .padding(.top, 12)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Success rate")
                             .font(.headline)
-                        Text("\(NumberFormatting.string(from: cell.successOutcomes))/\(NumberFormatting.string(from: cell.totalOutcomes)) per \(singularTrialsName)")
+                    Text("\(NumberFormatting.string(from: cell.successOutcomes))/\(NumberFormatting.string(from: cell.totalOutcomes)) per \(singularTrialsName)")
                             .font(numberStyle.font(size: 16, weight: .semibold))
                             .foregroundColor(.secondary)
                     }
@@ -227,28 +222,48 @@ struct ProbabilityExplanationSheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Exact fraction")
                             .font(.headline)
-                        Text("\(numerator)/\(denominator)")
-                            .font(numberStyle.font(size: 20, weight: .semibold))
+                    Text("\(numerator)/\(denominator)")
+                        .font(numberStyle.font(size: 20, weight: .semibold))
+                        .foregroundColor(.primary)
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Formula")
                             .font(.headline)
-                        Text("∑ C(\(NumberFormatting.string(from: cell.trials)), k) × \(NumberFormatting.string(from: cell.successOutcomes))^k × \(NumberFormatting.string(from: failureOutcomes))^(\(NumberFormatting.string(from: cell.trials))−k)")
+                        Text(formulaLine)
                             .font(.footnote)
                             .foregroundColor(.secondary)
                         Text("k = \(NumberFormatting.string(from: cell.threshold)) ... \(NumberFormatting.string(from: cell.trials))")
                             .font(.footnote)
                             .foregroundColor(.secondary)
-                        Text("Divide by \(NumberFormatting.string(from: cell.totalOutcomes))^\(NumberFormatting.string(from: cell.trials))")
+                        Text(denominatorLine)
                             .font(.footnote)
                             .foregroundColor(.secondary)
+                        Text("Numerator = \(numerator)")
+                            .font(numberStyle.font(size: 16, weight: .semibold))
+                            .foregroundColor(.accentColor)
+                        Text("Denominator = \(denominator)")
+                            .font(numberStyle.font(size: 16, weight: .semibold))
+                            .foregroundColor(.accentColor)
+                        if let exampleLine {
+                            Text(exampleLine)
+                                .font(.footnote)
+                                .foregroundColor(.accentColor)
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Decimal")
                             .font(.headline)
-                        Text(decimalString)
+                    Text(decimalString)
+                            .font(numberStyle.font(size: 18, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Approximation")
+                            .font(.headline)
+                        Text("≈ \(approximationText)")
                             .font(numberStyle.font(size: 18, weight: .semibold))
                             .foregroundColor(.secondary)
                     }
@@ -283,5 +298,81 @@ struct ProbabilityExplanationSheet: View {
             return String(cell.trialsName.dropLast())
         }
         return cell.trialsName
+    }
+
+    private var successLabel: String {
+        if cell.threshold == 1 {
+            return singularSuccessName
+        }
+        return cell.successName
+    }
+
+    private var trialsLabel: String {
+        if cell.trials == 1 {
+            return singularTrialsName
+        }
+        return cell.trialsName
+    }
+
+    private var singularSuccessName: String {
+        let lower = cell.successName.lowercased()
+        let mapped: [String: String] = [
+            "sixes": "six",
+            "aces": "ace",
+            "spades": "spade",
+            "heads": "head",
+            "black cards": "black card"
+        ]
+        if let match = mapped[lower] {
+            return match
+        }
+        if lower.hasSuffix("s") {
+            return String(cell.successName.dropLast())
+        }
+        return cell.successName
+    }
+
+    private var formulaLine: AttributedString {
+        var result = AttributedString("∑ C(\(NumberFormatting.string(from: cell.trials)), k) × ")
+        result.append(exponent(base: cell.successOutcomes, power: "k"))
+        result.append(AttributedString(" × "))
+        result.append(exponent(base: failureOutcomes, power: "\(NumberFormatting.string(from: cell.trials))−k"))
+        return result
+    }
+
+    private var denominatorLine: AttributedString {
+        var result = AttributedString("Divide by ")
+        result.append(exponent(base: cell.totalOutcomes, power: NumberFormatting.string(from: cell.trials)))
+        return result
+    }
+
+    private func exponent(base: Int, power: String) -> AttributedString {
+        var result = AttributedString(NumberFormatting.string(from: base))
+        var powerText = AttributedString(power)
+        powerText.font = .system(size: 11, weight: .semibold)
+        powerText.baselineOffset = 6
+        result.append(powerText)
+        return result
+    }
+
+    private var approximationText: String {
+        let denom = approximateUnitFractionDenominator(value: fraction.value)
+        return "1/\(NumberFormatting.string(from: denom))"
+    }
+
+    private var exampleLine: AttributedString? {
+        guard cell.threshold <= cell.trials else { return nil }
+        let k = cell.threshold
+        var result = AttributedString("Example (k = \(NumberFormatting.string(from: k))): ")
+        result.append(exponent(base: cell.successOutcomes, power: NumberFormatting.string(from: k)))
+        result.append(AttributedString(" × "))
+        result.append(exponent(base: failureOutcomes, power: NumberFormatting.string(from: cell.trials - k)))
+        return result
+    }
+
+    private func approximateUnitFractionDenominator(value: Double) -> Int {
+        guard value > 0 else { return 1 }
+        let denom = Int(round(1.0 / value))
+        return max(1, denom)
     }
 }

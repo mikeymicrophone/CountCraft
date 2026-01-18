@@ -21,10 +21,9 @@ struct ProbabilityCardsGridView: View {
             .pickerStyle(.segmented)
 
             ProbabilityGridView(
-                title: "At least x \(focus.rowLabel) after y draws",
-                rowLabel: "Rows: x (\(focus.rowLabel)). Columns: y (draws).",
+                title: "At least y \(focus.rowLabel) after x pulls",
                 successName: focus.rowLabel,
-                trialsName: "draws",
+                trialsName: "pulls",
                 successOutcomes: focus.successOutcomes,
                 totalOutcomes: 52,
                 format: format
