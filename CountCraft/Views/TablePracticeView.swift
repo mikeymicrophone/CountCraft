@@ -27,6 +27,9 @@ struct TablePracticeView: View {
     @State private var activeSheet: TableSheetItem?
     @State private var showingPreferences = false
     @Binding private var pendingExplanation: MathFact?
+    @State private var isAutoExplaining = false
+    @State private var autoExplainFact: MathFact?
+    @State private var autoExplainTask: Task<Void, Never>?
 
     init(
         operation: OperationType,
@@ -63,6 +66,22 @@ struct TablePracticeView: View {
                         inputMode: $inputMode
                     )
                 }
+                HStack {
+                    Button {
+                        if isAutoExplaining {
+                            stopAutoExplain()
+                        } else {
+                            startAutoExplain()
+                        }
+                    } label: {
+                        Label(
+                            isAutoExplaining ? "Pause explanations" : "Auto explanations",
+                            systemImage: isAutoExplaining ? "pause.circle.fill" : "play.circle.fill"
+                        )
+                    }
+                    .buttonStyle(.borderedProminent)
+                    Spacer()
+                }
                 TablePracticeGridView(
                     operation: operation,
                     rowValues: rowValues,
@@ -71,6 +90,7 @@ struct TablePracticeView: View {
                     answersShown: answersShown,
                     numberStyle: numberStyle,
                     onSelectFact: { fact in
+                        stopAutoExplain()
                         activeSheet = TableSheetItem(
                             fact: fact,
                             mode: answersShown ? .explain : .guess
@@ -126,6 +146,10 @@ struct TablePracticeView: View {
         .onChange(of: pendingExplanation) { _, _ in
             openPendingExplanationIfNeeded()
         }
+        .onDisappear {
+            stopAutoExplain()
+        }
+        .overlay(autoExplainOverlay)
     }
 
     private var filteredGuesses: [PracticeGuess] {
@@ -197,6 +221,84 @@ struct TablePracticeView: View {
             return Array(lower...upper)
         }
         return Array(upper...lower)
+    }
+
+    private var autoExplainOverlay: some View {
+        Group {
+            if isAutoExplaining, let fact = autoExplainFact {
+                ZStack {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            stopAutoExplain()
+                        }
+                    ExplanationSheet(
+                        operation: operation,
+                        fact: fact,
+                        rowValues: rowValues,
+                        columnValues: columnValues,
+                        onNavigate: { newFact in
+                            autoExplainFact = newFact
+                        },
+                        onSwitchOperation: onSwitchOperation.map { switchOperation in
+                            { target in
+                                stopAutoExplain()
+                                switchOperation(target, fact)
+                            }
+                        }
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(Color(.systemBackground))
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 24))
+                    .shadow(radius: 16)
+                    .padding(24)
+                }
+                .transition(.opacity)
+            }
+        }
+    }
+
+    private func startAutoExplain() {
+        stopAutoExplain(clearFact: false)
+        autoExplainFact = randomFact(excluding: nil)
+        guard autoExplainFact != nil else { return }
+        activeSheet = nil
+        isAutoExplaining = true
+        autoExplainTask = Task { @MainActor in
+            while isAutoExplaining {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                guard isAutoExplaining else { break }
+                autoExplainFact = randomFact(excluding: autoExplainFact)
+            }
+        }
+    }
+
+    private func stopAutoExplain(clearFact: Bool = true) {
+        isAutoExplaining = false
+        autoExplainTask?.cancel()
+        autoExplainTask = nil
+        if clearFact {
+            autoExplainFact = nil
+        }
+    }
+
+    private func randomFact(excluding fact: MathFact?) -> MathFact? {
+        let facts = rowValues.flatMap { row in
+            columnValues.map { column in
+                MathFact(a: row, b: column)
+            }
+        }
+        guard !facts.isEmpty else { return nil }
+        guard let fact, facts.count > 1 else { return facts.randomElement() }
+        var next = fact
+        while next == fact {
+            if let candidate = facts.randomElement() {
+                next = candidate
+            }
+        }
+        return next
     }
 }
 

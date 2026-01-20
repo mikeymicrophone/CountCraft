@@ -8,3 +8,4 @@
 - Feedback cues: clearer correct/incorrect response (visual + haptic/audio).
 - Probability: add hypergeometric (without replacement) for cards.
 - Probability: toggle between "at least" and "exactly" counts.
+- Multiple choice formats: add new question styles for newer grids (and expand originals), with options to randomize, pick explicitly, or tie to mastery levels.
