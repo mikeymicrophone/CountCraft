@@ -20,45 +20,36 @@ struct ExplanationHeaderView: View {
                     exponent: fact.b,
                     baseSize: 28,
                     exponentSize: 18,
-                    exponentOffset: 12,
-                    baseColor: numberStyle.primaryColor(for: fact.a),
-                    exponentColor: numberStyle.primaryColor(for: fact.b)
+                    exponentOffset: 12
                 )
                 Text("=")
                     .foregroundColor(.secondary)
                     .font(numberStyle.font(size: 28, weight: .semibold))
-                Text(NumberFormatting.string(from: operation.answer(for: fact)))
-                    .foregroundColor(numberStyle.primaryColor(for: operation.answer(for: fact)))
+                Text(numberStyle.attributedNumber(operation.answer(for: fact)))
                     .font(numberStyle.font(size: 28, weight: .semibold))
             }
         } else if operation == .sets {
             HStack(spacing: 4) {
                 Text("C(")
                     .foregroundColor(.secondary)
-                Text(NumberFormatting.string(from: fact.b + 1))
-                    .foregroundColor(numberStyle.primaryColor(for: fact.b + 1))
+                Text(numberStyle.attributedNumber(fact.b + 1))
                 Text(",")
                     .foregroundColor(.secondary)
-                Text(NumberFormatting.string(from: fact.a))
-                    .foregroundColor(numberStyle.primaryColor(for: fact.a))
+                Text(numberStyle.attributedNumber(fact.a))
                 Text(") =")
                     .foregroundColor(.secondary)
-                Text(NumberFormatting.string(from: operation.answer(for: fact)))
-                    .foregroundColor(numberStyle.primaryColor(for: operation.answer(for: fact)))
+                Text(numberStyle.attributedNumber(operation.answer(for: fact)))
             }
             .font(numberStyle.font(size: 26, weight: .semibold))
         } else {
             HStack(spacing: 8) {
-                Text(NumberFormatting.string(from: fact.a))
-                    .foregroundColor(numberStyle.primaryColor(for: fact.a))
+                Text(numberStyle.attributedNumber(fact.a))
                 Text(operation.symbol)
                     .foregroundColor(.secondary)
-                Text(NumberFormatting.string(from: fact.b))
-                    .foregroundColor(numberStyle.primaryColor(for: fact.b))
+                Text(numberStyle.attributedNumber(fact.b))
                 Text("=")
                     .foregroundColor(.secondary)
-                Text(NumberFormatting.string(from: operation.answer(for: fact)))
-                    .foregroundColor(numberStyle.primaryColor(for: operation.answer(for: fact)))
+                Text(numberStyle.attributedNumber(operation.answer(for: fact)))
             }
             .font(numberStyle.font(size: 28, weight: .semibold))
         }
@@ -69,16 +60,12 @@ struct ExplanationHeaderView: View {
         exponent: Int,
         baseSize: CGFloat,
         exponentSize: CGFloat,
-        exponentOffset: CGFloat,
-        baseColor: Color,
-        exponentColor: Color
+        exponentOffset: CGFloat
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 2) {
-            Text(NumberFormatting.string(from: base))
-                .foregroundColor(baseColor)
+            Text(numberStyle.attributedNumber(base))
                 .font(numberStyle.font(size: baseSize, weight: .semibold))
-            Text(NumberFormatting.string(from: exponent))
-                .foregroundColor(exponentColor)
+            Text(numberStyle.attributedNumber(exponent))
                 .font(numberStyle.font(size: exponentSize, weight: .semibold))
                 .baselineOffset(exponentOffset)
         }

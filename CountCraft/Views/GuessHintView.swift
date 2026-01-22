@@ -27,38 +27,33 @@ struct GuessHintView: View {
 
     private var expandedExponentView: some View {
         let baseText = NumberFormatting.string(from: fact.a)
-        let baseColor = numberStyle.secondaryColor(for: fact.a)
         if fact.b == 0 {
             return AnyView(
                 VStack(spacing: 4) {
-                    Text(baseText)
-                        .foregroundColor(baseColor)
+                    Text(numberStyle.attributedNumber(baseText, value: fact.a, role: .secondary))
                     Rectangle()
                         .frame(width: 40, height: 2)
                         .foregroundColor(.secondary)
-                    Text(baseText)
-                        .foregroundColor(baseColor)
+                    Text(numberStyle.attributedNumber(baseText, value: fact.a, role: .secondary))
                 }
                 .font(numberStyle.font(size: 22, weight: .semibold))
-                .foregroundColor(.secondary)
             )
         }
 
         return AnyView(
             repeatedText(
-                value: baseText,
+                valueText: baseText,
+                value: fact.a,
                 count: fact.b,
                 separator: " x ",
-                color: baseColor
+                role: .secondary
             )
             .font(numberStyle.font(size: 22, weight: .semibold))
-            .foregroundColor(.secondary)
         )
     }
 
     private var expandedMultiplicationView: some View {
         let baseText = NumberFormatting.string(from: fact.a)
-        let baseColor = numberStyle.secondaryColor(for: fact.a)
         if fact.b <= 0 {
             return AnyView(
                 Text("0")
@@ -69,30 +64,26 @@ struct GuessHintView: View {
 
         return AnyView(
             repeatedText(
-                value: baseText,
+                valueText: baseText,
+                value: fact.a,
                 count: fact.b,
                 separator: " + ",
-                color: baseColor
+                role: .secondary
             )
             .font(numberStyle.font(size: 22, weight: .semibold))
-            .foregroundColor(.secondary)
         )
     }
 
     private var expandedAdditionView: some View {
         let left = onesGroup(count: fact.a)
         let right = onesGroup(count: fact.b)
-        let oneColor = numberStyle.secondaryColor(for: 1)
         return HStack(spacing: 8) {
-            Text(left)
-                .foregroundColor(oneColor)
+            Text(numberStyle.attributedNumber(left, value: 1, role: .secondary))
             Text(" ")
                 .foregroundColor(.secondary)
-            Text(right)
-                .foregroundColor(oneColor)
+            Text(numberStyle.attributedNumber(right, value: 1, role: .secondary))
         }
         .font(numberStyle.font(size: 20, weight: .semibold))
-        .foregroundColor(.secondary)
     }
 
     private func onesGroup(count: Int) -> String {
@@ -101,10 +92,11 @@ struct GuessHintView: View {
     }
 
     private func repeatedText(
-        value: String,
+        valueText: String,
+        value: Int,
         count: Int,
         separator: String,
-        color: Color
+        role: NumberStyle.Role
     ) -> Text {
         guard count > 0 else { return Text("0").foregroundColor(.secondary) }
         var result = AttributedString()
@@ -114,9 +106,8 @@ struct GuessHintView: View {
                 separatorText.foregroundColor = .secondary
                 result.append(separatorText)
             }
-            var valueText = AttributedString(value)
-            valueText.foregroundColor = color
-            result.append(valueText)
+            let valueAttributed = numberStyle.attributedNumber(valueText, value: value, role: role)
+            result.append(valueAttributed)
         }
         return Text(result)
     }

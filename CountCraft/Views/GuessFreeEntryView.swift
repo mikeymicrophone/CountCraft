@@ -14,12 +14,19 @@ struct GuessFreeEntryView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text(entryText.isEmpty ? " " : NumberFormatting.string(from: entryValue))
-                .font(numberStyle.font(size: 34, weight: .semibold))
-                .frame(width: 140, height: 56)
-                .foregroundColor(entryColor)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+            Group {
+                if entryText.isEmpty {
+                    Text(" ")
+                        .foregroundColor(.primary)
+                } else {
+                    Text(numberStyle.attributedNumber(entryValue))
+                }
+            }
+            .font(numberStyle.font(size: 34, weight: .semibold))
+            .frame(width: 140, height: 56)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .numberBorder(entryBorderColor, cornerRadius: 12)
 
             GuessKeypadView(
                 numberStyle: numberStyle,
@@ -47,9 +54,9 @@ struct GuessFreeEntryView: View {
         Int(entryText) ?? 0
     }
 
-    private var entryColor: Color {
-        guard let value = Int(entryText) else { return .primary }
-        return numberStyle.primaryColor(for: value)
+    private var entryBorderColor: Color? {
+        guard let value = Int(entryText) else { return nil }
+        return numberStyle.borderColor(for: value)
     }
 
     private func appendDigit(_ digit: Int) {

@@ -14,24 +14,26 @@ struct ReviewGuessRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(NumberFormatting.string(from: guess.a))
-                .foregroundColor(numberStyle.primaryColor(for: guess.a))
+            Text(numberStyle.attributedNumber(guess.a))
                 .frame(width: ReviewColumns.operand, alignment: .leading)
 
             Text(operationSymbol)
                 .foregroundColor(.secondary)
                 .frame(width: ReviewColumns.operatorSymbol, alignment: .center)
 
-            Text(NumberFormatting.string(from: guess.b))
-                .foregroundColor(numberStyle.primaryColor(for: guess.b))
+            Text(numberStyle.attributedNumber(guess.b))
                 .frame(width: ReviewColumns.operand, alignment: .leading)
 
-            Text(guessAnswerText)
-                .foregroundColor(guessAnswerColor)
-                .frame(width: ReviewColumns.guess, alignment: .leading)
+            if let answer = guess.userAnswer {
+                Text(numberStyle.attributedNumber(answer))
+                    .frame(width: ReviewColumns.guess, alignment: .leading)
+            } else {
+                Text("—")
+                    .foregroundColor(.secondary)
+                    .frame(width: ReviewColumns.guess, alignment: .leading)
+            }
 
-            Text(NumberFormatting.string(from: guess.correctAnswer))
-                .foregroundColor(numberStyle.primaryColor(for: guess.correctAnswer))
+            Text(numberStyle.attributedNumber(guess.correctAnswer))
                 .frame(width: ReviewColumns.answer, alignment: .leading)
 
             Image(systemName: guess.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
@@ -48,11 +50,6 @@ struct ReviewGuessRow: View {
         .font(.subheadline)
     }
 
-    private var guessAnswerText: String {
-        guard let answer = guess.userAnswer else { return "—" }
-        return NumberFormatting.string(from: answer)
-    }
-
     private var difficultyText: String {
         guard let value = guess.difficulty,
               let difficulty = ChoiceDifficulty(rawValue: value) else {
@@ -63,11 +60,6 @@ struct ReviewGuessRow: View {
 
     private var operationSymbol: String {
         OperationType(rawValue: guess.operation)?.symbol ?? "?"
-    }
-
-    private var guessAnswerColor: Color {
-        guard let answer = guess.userAnswer else { return .secondary }
-        return numberStyle.primaryColor(for: answer)
     }
 
     private var numberStyle: NumberStyle {

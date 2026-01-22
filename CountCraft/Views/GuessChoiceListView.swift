@@ -18,13 +18,13 @@ struct GuessChoiceListView: View {
                 Button {
                     onSelect(option)
                 } label: {
-                    Text(NumberFormatting.string(from: option))
+                    Text(numberStyle.attributedNumber(option))
                         .font(numberStyle.font(size: 22, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .foregroundColor(numberStyle.primaryColor(for: option))
                         .background(Color(.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .numberBorder(numberStyle.borderColor(for: option), cornerRadius: 14)
                 }
             }
         }

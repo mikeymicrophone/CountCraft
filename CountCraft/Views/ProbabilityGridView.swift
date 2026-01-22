@@ -114,13 +114,20 @@ struct ProbabilityGridView: View {
     }
 
     private func headerCell(_ text: String, value: Int? = nil) -> some View {
-        let color = value.flatMap { numberStyle.color(for: $0) } ?? .primary
-        return Text(text)
-            .font(numberStyle.font(size: 12, weight: .semibold))
-            .frame(width: 58, height: 44)
-            .foregroundColor(color)
-            .background(Color(.tertiarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+        let borderColor = value.flatMap { numberStyle.borderColor(for: $0) }
+        return Group {
+            if let value {
+                Text(numberStyle.attributedNumber(text, value: value))
+            } else {
+                Text(text)
+                    .foregroundColor(.primary)
+            }
+        }
+        .font(numberStyle.font(size: 12, weight: .semibold))
+        .frame(width: 58, height: 44)
+        .background(Color(.tertiarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .numberBorder(borderColor, cornerRadius: 10)
     }
 
     private var valuesX: [Int] {

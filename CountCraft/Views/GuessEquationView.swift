@@ -15,30 +15,24 @@ struct GuessEquationView: View {
     var body: some View {
         HStack(spacing: 8) {
             if operation == .exponent {
-                Text("\(fact.a)")
-                    .foregroundColor(numberStyle.primaryColor(for: fact.a))
-                Text("\(fact.b)")
+                Text(numberStyle.attributedNumber(fact.a))
+                Text(numberStyle.attributedNumber(fact.b))
                     .font(numberStyle.font(size: 20, weight: .semibold))
                     .baselineOffset(16)
-                    .foregroundColor(numberStyle.primaryColor(for: fact.b))
             } else if operation == .sets {
                 Text("C(")
                     .foregroundColor(.secondary)
-                Text(NumberFormatting.string(from: fact.b + 1))
-                    .foregroundColor(numberStyle.primaryColor(for: fact.b + 1))
+                Text(numberStyle.attributedNumber(fact.b + 1))
                 Text(",")
                     .foregroundColor(.secondary)
-                Text(NumberFormatting.string(from: fact.a))
-                    .foregroundColor(numberStyle.primaryColor(for: fact.a))
+                Text(numberStyle.attributedNumber(fact.a))
                 Text(")")
                     .foregroundColor(.secondary)
             } else {
-                Text("\(fact.a)")
-                    .foregroundColor(numberStyle.primaryColor(for: fact.a))
+                Text(numberStyle.attributedNumber(fact.a))
                 Text(operation.symbol)
                     .foregroundColor(.primary)
-                Text("\(fact.b)")
-                    .foregroundColor(numberStyle.primaryColor(for: fact.b))
+                Text(numberStyle.attributedNumber(fact.b))
             }
             Text("=")
                 .foregroundColor(.primary)

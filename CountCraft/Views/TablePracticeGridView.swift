@@ -22,13 +22,13 @@ struct TablePracticeGridView: View {
                 HStack(spacing: 8) {
                     headerCell("")
                     ForEach(columnValues, id: \.self) { value in
-                        headerCell("\(value)", value: value)
+                        headerCell(NumberFormatting.string(from: value), value: value)
                     }
                 }
 
                 ForEach(rowValues, id: \.self) { row in
                     HStack(spacing: 8) {
-                        headerCell("\(row)", value: row)
+                        headerCell(NumberFormatting.string(from: row), value: row)
                         ForEach(columnValues, id: \.self) { column in
                             let fact = MathFact(a: row, b: column)
                             let stats = statsByFact[FactKey(a: row, b: column)]
@@ -57,13 +57,20 @@ struct TablePracticeGridView: View {
     }
 
     private func headerCell(_ text: String, value: Int? = nil) -> some View {
-        let color = value.flatMap { numberStyle.color(for: $0) } ?? .primary
-        return Text(text)
-            .font(numberStyle.font(size: 16))
-            .frame(width: 44, height: 44)
-            .foregroundColor(color)
-            .background(Color(.tertiarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+        let borderColor = value.flatMap { numberStyle.borderColor(for: $0) }
+        return Group {
+            if let value {
+                Text(numberStyle.attributedNumber(text, value: value))
+            } else {
+                Text(text)
+                    .foregroundColor(.primary)
+            }
+        }
+        .font(numberStyle.font(size: 16))
+        .frame(width: 44, height: 44)
+        .background(Color(.tertiarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .numberBorder(borderColor, cornerRadius: 10)
     }
 
     private func fontSize(for label: String) -> CGFloat {

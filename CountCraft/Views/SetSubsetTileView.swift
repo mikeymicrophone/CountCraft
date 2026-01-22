@@ -45,8 +45,10 @@ struct SetSubsetTileView: View {
                     comma.foregroundColor = .secondary
                     result.append(comma)
                 }
-                var valueText = AttributedString(NumberFormatting.string(from: value))
-                valueText.foregroundColor = numberStyle.primaryColor(for: value)
+                let valueText = numberStyle.attributedNumber(
+                    NumberFormatting.string(from: value),
+                    value: value
+                )
                 result.append(valueText)
             }
         }

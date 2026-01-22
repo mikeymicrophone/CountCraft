@@ -14,7 +14,20 @@ struct NumberStyling {
     ]
 
     static func color(for value: Int, enabled: Bool) -> Color? {
-        guard enabled, (0...12).contains(value) else { return nil }
-        return palette[value % palette.count]
+        guard enabled else { return nil }
+        let absolute = abs(value)
+        if absolute < 10 {
+            return palette[absolute % palette.count]
+        }
+        let onesDigit = absolute % 10
+        return palette[onesDigit % palette.count]
+    }
+
+    static func borderColor(for value: Int, enabled: Bool) -> Color? {
+        guard enabled else { return nil }
+        let absolute = abs(value)
+        guard absolute >= 10 else { return nil }
+        let tensDigit = (absolute / 10) % 10
+        return palette[tensDigit % palette.count]
     }
 }

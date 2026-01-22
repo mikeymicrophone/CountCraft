@@ -143,9 +143,8 @@ struct ExplanationSheet: View {
 
     private func bankColumn(label: String, value: Int) -> some View {
         VStack(spacing: 8) {
-            Text(label)
+            Text(numberStyle.attributedNumber(label, value: value))
                 .font(numberStyle.font(size: 18, weight: .semibold))
-                .foregroundColor(numberStyle.primaryColor(for: value))
             FitSquareGrid(
                 count: value,
                 columns: gridColumns(for: value),
