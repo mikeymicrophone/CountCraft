@@ -30,6 +30,8 @@ struct TablePracticeView: View {
     @State private var isAutoExplaining = false
     @State private var autoExplainFact: MathFact?
     @State private var autoExplainTask: Task<Void, Never>?
+    @State private var gridData: GridData
+    @State private var gridToken = 0
 
     init(
         operation: OperationType,
@@ -49,16 +51,24 @@ struct TablePracticeView: View {
         _axisMaxX = AppStorage(wrappedValue: 12, "prefAxisMaxX-\(operation.rawValue)")
         _axisMinY = AppStorage(wrappedValue: 0, "prefAxisMinY-\(operation.rawValue)")
         _axisMaxY = AppStorage(wrappedValue: 12, "prefAxisMaxY-\(operation.rawValue)")
+        let axis = Self.axisValues(for: operation)
+        _gridData = State(
+            initialValue: Self.makeGridData(
+                guesses: guesses,
+                operation: operation,
+                axis: axis
+            )
+        )
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
                 TablePracticeProgressView(
-                    attempts: filteredGuesses.count,
-                    correct: filteredGuesses.filter { $0.isCorrect }.count,
-                    mastered: statsByFact.values.filter { $0.isMastered }.count,
-                    totalFacts: rowValues.count * columnValues.count
+                    attempts: gridData.attempts,
+                    correct: gridData.correct,
+                    mastered: gridData.statsByFact.values.filter { $0.isMastered }.count,
+                    totalFacts: gridData.rowValues.count * gridData.columnValues.count
                 )
                 if operation != .sets {
                     TablePracticeControlsView(
@@ -82,11 +92,12 @@ struct TablePracticeView: View {
                     .buttonStyle(.borderedProminent)
                     Spacer()
                 }
-                TablePracticeGridView(
+                TablePracticeGridHost(
+                    token: gridToken,
                     operation: operation,
-                    rowValues: rowValues,
-                    columnValues: columnValues,
-                    statsByFact: statsByFact,
+                    rowValues: gridData.rowValues,
+                    columnValues: gridData.columnValues,
+                    statsByFact: gridData.statsByFact,
                     answersShown: answersShown,
                     numberStyle: numberStyle,
                     onSelectFact: { fact in
@@ -122,8 +133,8 @@ struct TablePracticeView: View {
                     ExplanationSheet(
                         operation: operation,
                         fact: item.fact,
-                        rowValues: rowValues,
-                        columnValues: columnValues,
+                        rowValues: gridData.rowValues,
+                        columnValues: gridData.columnValues,
                         onNavigate: { newFact in
                             activeSheet = TableSheetItem(fact: newFact, mode: .explain)
                         },
@@ -141,7 +152,23 @@ struct TablePracticeView: View {
             }
         }
         .onAppear {
+            refreshGridData()
             openPendingExplanationIfNeeded()
+        }
+        .onChange(of: guesses) { _, _ in
+            refreshGridData()
+        }
+        .onChange(of: axisMinX) { _, _ in
+            refreshGridData()
+        }
+        .onChange(of: axisMaxX) { _, _ in
+            refreshGridData()
+        }
+        .onChange(of: axisMinY) { _, _ in
+            refreshGridData()
+        }
+        .onChange(of: axisMaxY) { _, _ in
+            refreshGridData()
         }
         .onChange(of: pendingExplanation) { _, _ in
             openPendingExplanationIfNeeded()
@@ -152,25 +179,10 @@ struct TablePracticeView: View {
         .overlay(autoExplainOverlay)
     }
 
-    private var filteredGuesses: [PracticeGuess] {
-        let rowSet = Set(rowValues)
-        let columnSet = Set(columnValues)
-        return guesses.filter { guess in
-            guess.operation == operation.rawValue
-                && rowSet.contains(guess.a)
-                && columnSet.contains(guess.b)
-        }
-    }
-
-    private var statsByFact: [FactKey: FactStats] {
-        var stats: [FactKey: FactStats] = [:]
-        for guess in filteredGuesses {
-            let key = FactKey(a: guess.a, b: guess.b)
-            let current = stats[key] ?? FactStats()
-            let updated = current.adding(guess: guess)
-            stats[key] = updated
-        }
-        return stats
+    private func refreshGridData() {
+        let axis = AxisValues(minX: axisMinX, maxX: axisMaxX, minY: axisMinY, maxY: axisMaxY)
+        gridData = Self.makeGridData(guesses: guesses, operation: operation, axis: axis)
+        gridToken &+= 1
     }
 
     private func recordGuess(for fact: MathFact, userAnswer: Int?) {
@@ -206,17 +218,9 @@ struct TablePracticeView: View {
         pendingExplanation = nil
     }
 
-    private var rowValues: [Int] {
-        normalizedRange(minValue: axisMinY, maxValue: axisMaxY)
-    }
-
-    private var columnValues: [Int] {
-        normalizedRange(minValue: axisMinX, maxValue: axisMaxX)
-    }
-
-    private func normalizedRange(minValue: Int, maxValue: Int) -> [Int] {
-        let lower = min(max(minValue, 0), 12)
-        let upper = min(max(maxValue, 0), 12)
+    private static func normalizedRange(minValue: Int, maxValue: Int) -> [Int] {
+        let lower = min(max(minValue, 0), 40)
+        let upper = min(max(maxValue, 0), 40)
         if lower <= upper {
             return Array(lower...upper)
         }
@@ -235,8 +239,8 @@ struct TablePracticeView: View {
                     ExplanationSheet(
                         operation: operation,
                         fact: fact,
-                        rowValues: rowValues,
-                        columnValues: columnValues,
+                        rowValues: gridData.rowValues,
+                        columnValues: gridData.columnValues,
                         onNavigate: { newFact in
                             autoExplainFact = newFact
                         },
@@ -285,8 +289,8 @@ struct TablePracticeView: View {
     }
 
     private func randomFact(excluding fact: MathFact?) -> MathFact? {
-        let facts = rowValues.flatMap { row in
-            columnValues.map { column in
+        let facts = gridData.rowValues.flatMap { row in
+            gridData.columnValues.map { column in
                 MathFact(a: row, b: column)
             }
         }
@@ -299,6 +303,95 @@ struct TablePracticeView: View {
             }
         }
         return next
+    }
+
+    private static func axisValues(for operation: OperationType) -> AxisValues {
+        let minXKey = "prefAxisMinX-\(operation.rawValue)"
+        let maxXKey = "prefAxisMaxX-\(operation.rawValue)"
+        let minYKey = "prefAxisMinY-\(operation.rawValue)"
+        let maxYKey = "prefAxisMaxY-\(operation.rawValue)"
+        let minX = UserDefaults.standard.integer(forKey: minXKey)
+        let maxX = UserDefaults.standard.object(forKey: maxXKey) as? Int ?? 12
+        let minY = UserDefaults.standard.integer(forKey: minYKey)
+        let maxY = UserDefaults.standard.object(forKey: maxYKey) as? Int ?? 12
+        return AxisValues(minX: minX, maxX: maxX, minY: minY, maxY: maxY)
+    }
+
+    private static func makeGridData(
+        guesses: [PracticeGuess],
+        operation: OperationType,
+        axis: AxisValues
+    ) -> GridData {
+        let rowValues = normalizedRange(minValue: axis.minY, maxValue: axis.maxY)
+        let columnValues = normalizedRange(minValue: axis.minX, maxValue: axis.maxX)
+        let rowSet = Set(rowValues)
+        let columnSet = Set(columnValues)
+        var attempts = 0
+        var correct = 0
+        var stats: [FactKey: FactStats] = [:]
+
+        for guess in guesses where guess.operation == operation.rawValue {
+            guard rowSet.contains(guess.a), columnSet.contains(guess.b) else { continue }
+            attempts += 1
+            if guess.isCorrect {
+                correct += 1
+            }
+            let key = FactKey(a: guess.a, b: guess.b)
+            let current = stats[key] ?? FactStats()
+            stats[key] = current.adding(guess: guess)
+        }
+
+        return GridData(
+            rowValues: rowValues,
+            columnValues: columnValues,
+            attempts: attempts,
+            correct: correct,
+            statsByFact: stats
+        )
+    }
+}
+
+private struct AxisValues {
+    let minX: Int
+    let maxX: Int
+    let minY: Int
+    let maxY: Int
+}
+
+private struct GridData {
+    let rowValues: [Int]
+    let columnValues: [Int]
+    let attempts: Int
+    let correct: Int
+    let statsByFact: [FactKey: FactStats]
+}
+
+private struct TablePracticeGridHost: View, Equatable {
+    let token: Int
+    let operation: OperationType
+    let rowValues: [Int]
+    let columnValues: [Int]
+    let statsByFact: [FactKey: FactStats]
+    let answersShown: Bool
+    let numberStyle: NumberStyle
+    let onSelectFact: (MathFact) -> Void
+
+    static func == (lhs: TablePracticeGridHost, rhs: TablePracticeGridHost) -> Bool {
+        lhs.token == rhs.token
+            && lhs.answersShown == rhs.answersShown
+            && lhs.numberStyle == rhs.numberStyle
+    }
+
+    var body: some View {
+        TablePracticeGridView(
+            operation: operation,
+            rowValues: rowValues,
+            columnValues: columnValues,
+            statsByFact: statsByFact,
+            answersShown: answersShown,
+            numberStyle: numberStyle,
+            onSelectFact: onSelectFact
+        )
     }
 }
 

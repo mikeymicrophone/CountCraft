@@ -180,7 +180,7 @@ struct PreferencesView: View {
     }
 
     private func clamp(_ value: Int) -> Int {
-        min(max(value, 0), 12)
+        min(max(value, 0), 40)
     }
 
     private func gridKey(_ baseKey: String) -> String {

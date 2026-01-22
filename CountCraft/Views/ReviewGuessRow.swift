@@ -14,18 +14,18 @@ struct ReviewGuessRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(numberStyle.attributedNumber(guess.a))
+            numberStyle.outlinedNumberText(guess.a)
                 .frame(width: ReviewColumns.operand, alignment: .leading)
 
             Text(operationSymbol)
                 .foregroundColor(.secondary)
                 .frame(width: ReviewColumns.operatorSymbol, alignment: .center)
 
-            Text(numberStyle.attributedNumber(guess.b))
+            numberStyle.outlinedNumberText(guess.b)
                 .frame(width: ReviewColumns.operand, alignment: .leading)
 
             if let answer = guess.userAnswer {
-                Text(numberStyle.attributedNumber(answer))
+                numberStyle.outlinedNumberText(answer)
                     .frame(width: ReviewColumns.guess, alignment: .leading)
             } else {
                 Text("—")
@@ -33,7 +33,7 @@ struct ReviewGuessRow: View {
                     .frame(width: ReviewColumns.guess, alignment: .leading)
             }
 
-            Text(numberStyle.attributedNumber(guess.correctAnswer))
+            numberStyle.outlinedNumberText(guess.correctAnswer)
                 .frame(width: ReviewColumns.answer, alignment: .leading)
 
             Image(systemName: guess.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")

@@ -18,7 +18,7 @@ struct GuessChoiceListView: View {
                 Button {
                     onSelect(option)
                 } label: {
-                    Text(numberStyle.attributedNumber(option))
+                    numberStyle.outlinedNumberText(option)
                         .font(numberStyle.font(size: 22, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)

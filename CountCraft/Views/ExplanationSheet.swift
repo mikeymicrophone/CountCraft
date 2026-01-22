@@ -143,7 +143,7 @@ struct ExplanationSheet: View {
 
     private func bankColumn(label: String, value: Int) -> some View {
         VStack(spacing: 8) {
-            Text(numberStyle.attributedNumber(label, value: value))
+            numberStyle.outlinedNumberText(label, value: value)
                 .font(numberStyle.font(size: 18, weight: .semibold))
             FitSquareGrid(
                 count: value,

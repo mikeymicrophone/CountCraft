@@ -19,7 +19,7 @@ struct GuessFreeEntryView: View {
                     Text(" ")
                         .foregroundColor(.primary)
                 } else {
-                    Text(numberStyle.attributedNumber(entryValue))
+                    numberStyle.outlinedNumberText(entryValue)
                 }
             }
             .font(numberStyle.font(size: 34, weight: .semibold))

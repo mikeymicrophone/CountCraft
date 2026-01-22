@@ -17,70 +17,84 @@ struct ContentView: View {
     @State private var pendingExplanation: [OperationType: MathFact] = [:]
 
     var body: some View {
+        let currentGuesses = activeGuesses
+        let currentProfile = selectedProfile
         TabView(selection: $selectedTab) {
-            TablePracticeView(
-                operation: .addition,
-                guesses: activeGuesses,
-                profile: selectedProfile,
-                onGuess: recordGuess,
-                onSwitchOperation: switchOperation,
-                pendingExplanation: pendingBinding(for: .addition)
-            )
-                .tabItem {
-                    Label("Addition", systemImage: "plus")
-                }
-                .tag(TabSelection.addition)
+            LazyTabItem(selection: selectedTab, tag: .addition) {
+                TablePracticeView(
+                    operation: .addition,
+                    guesses: currentGuesses,
+                    profile: currentProfile,
+                    onGuess: recordGuess,
+                    onSwitchOperation: switchOperation,
+                    pendingExplanation: pendingBinding(for: .addition)
+                )
+            }
+            .tabItem {
+                Label("Addition", systemImage: "plus")
+            }
+            .tag(TabSelection.addition)
 
-            TablePracticeView(
-                operation: .multiplication,
-                guesses: activeGuesses,
-                profile: selectedProfile,
-                onGuess: recordGuess,
-                onSwitchOperation: switchOperation,
-                pendingExplanation: pendingBinding(for: .multiplication)
-            )
-                .tabItem {
-                    Label("Multiply", systemImage: "multiply")
-                }
-                .tag(TabSelection.multiplication)
+            LazyTabItem(selection: selectedTab, tag: .multiplication) {
+                TablePracticeView(
+                    operation: .multiplication,
+                    guesses: currentGuesses,
+                    profile: currentProfile,
+                    onGuess: recordGuess,
+                    onSwitchOperation: switchOperation,
+                    pendingExplanation: pendingBinding(for: .multiplication)
+                )
+            }
+            .tabItem {
+                Label("Multiply", systemImage: "multiply")
+            }
+            .tag(TabSelection.multiplication)
 
-            TablePracticeView(
-                operation: .exponent,
-                guesses: activeGuesses,
-                profile: selectedProfile,
-                onGuess: recordGuess,
-                onSwitchOperation: switchOperation,
-                pendingExplanation: pendingBinding(for: .exponent)
-            )
-                .tabItem {
-                    Label("Exponents", systemImage: "function")
-                }
-                .tag(TabSelection.exponent)
+            LazyTabItem(selection: selectedTab, tag: .exponent) {
+                TablePracticeView(
+                    operation: .exponent,
+                    guesses: currentGuesses,
+                    profile: currentProfile,
+                    onGuess: recordGuess,
+                    onSwitchOperation: switchOperation,
+                    pendingExplanation: pendingBinding(for: .exponent)
+                )
+            }
+            .tabItem {
+                Label("Exponents", systemImage: "function")
+            }
+            .tag(TabSelection.exponent)
 
-            TablePracticeView(
-                operation: .sets,
-                guesses: activeGuesses,
-                profile: selectedProfile,
-                onGuess: recordGuess,
-                onSwitchOperation: switchOperation,
-                pendingExplanation: pendingBinding(for: .sets)
-            )
-                .tabItem {
-                    Label("Sets", systemImage: "square.grid.2x2")
-                }
-                .tag(TabSelection.sets)
+            LazyTabItem(selection: selectedTab, tag: .sets) {
+                TablePracticeView(
+                    operation: .sets,
+                    guesses: currentGuesses,
+                    profile: currentProfile,
+                    onGuess: recordGuess,
+                    onSwitchOperation: switchOperation,
+                    pendingExplanation: pendingBinding(for: .sets)
+                )
+            }
+            .tabItem {
+                Label("Sets", systemImage: "square.grid.2x2")
+            }
+            .tag(TabSelection.sets)
 
-            ProbabilityView(onSwitchOperation: switchOperation)
-                .tabItem {
-                    Label("Probability", systemImage: "chart.bar.xaxis")
-                }
-                .tag(TabSelection.probability)
+            LazyTabItem(selection: selectedTab, tag: .probability) {
+                ProbabilityView(onSwitchOperation: switchOperation)
+            }
+            .tabItem {
+                Label("Probability", systemImage: "chart.bar.xaxis")
+            }
+            .tag(TabSelection.probability)
 
-            ReviewGuessesView(guesses: activeGuesses)
-                .tabItem {
-                    Label("Review", systemImage: "list.bullet.rectangle")
-                }
-                .tag(TabSelection.review)
+            LazyTabItem(selection: selectedTab, tag: .review) {
+                ReviewGuessesView(guesses: currentGuesses)
+            }
+            .tabItem {
+                Label("Review", systemImage: "list.bullet.rectangle")
+            }
+            .tag(TabSelection.review)
         }
         .onAppear(perform: ensureProfileSelection)
         .onChange(of: profiles) { _, _ in
@@ -157,6 +171,37 @@ private enum TabSelection: Hashable {
     case sets
     case review
     case probability
+}
+
+private struct LazyTabItem<Content: View>: View {
+    let selection: TabSelection
+    let tag: TabSelection
+    let content: () -> Content
+
+    @State private var hasLoaded = false
+
+    init(
+        selection: TabSelection,
+        tag: TabSelection,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.selection = selection
+        self.tag = tag
+        self.content = content
+    }
+
+    var body: some View {
+        Group {
+            if hasLoaded || selection == tag {
+                content()
+                    .onAppear {
+                        hasLoaded = true
+                    }
+            } else {
+                Color.clear
+            }
+        }
+    }
 }
 
 #Preview {

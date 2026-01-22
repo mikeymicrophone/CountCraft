@@ -117,7 +117,7 @@ struct ProbabilityGridView: View {
         let borderColor = value.flatMap { numberStyle.borderColor(for: $0) }
         return Group {
             if let value {
-                Text(numberStyle.attributedNumber(text, value: value))
+                numberStyle.outlinedNumberText(text, value: value)
             } else {
                 Text(text)
                     .foregroundColor(.primary)
@@ -139,8 +139,8 @@ struct ProbabilityGridView: View {
     }
 
     private func normalizedRange(minValue: Int, maxValue: Int) -> [Int] {
-        let lower = min(max(minValue, 0), 12)
-        let upper = min(max(maxValue, 0), 12)
+        let lower = min(max(minValue, 0), 40)
+        let upper = min(max(maxValue, 0), 40)
         if lower <= upper {
             return Array(lower...upper)
         }

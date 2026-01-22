@@ -30,11 +30,11 @@ struct GuessHintView: View {
         if fact.b == 0 {
             return AnyView(
                 VStack(spacing: 4) {
-                    Text(numberStyle.attributedNumber(baseText, value: fact.a, role: .secondary))
+                    numberStyle.outlinedNumberText(baseText, value: fact.a, role: .secondary)
                     Rectangle()
                         .frame(width: 40, height: 2)
                         .foregroundColor(.secondary)
-                    Text(numberStyle.attributedNumber(baseText, value: fact.a, role: .secondary))
+                    numberStyle.outlinedNumberText(baseText, value: fact.a, role: .secondary)
                 }
                 .font(numberStyle.font(size: 22, weight: .semibold))
             )
@@ -78,10 +78,10 @@ struct GuessHintView: View {
         let left = onesGroup(count: fact.a)
         let right = onesGroup(count: fact.b)
         return HStack(spacing: 8) {
-            Text(numberStyle.attributedNumber(left, value: 1, role: .secondary))
+            numberStyle.outlinedNumberText(left, value: 1, role: .secondary)
             Text(" ")
                 .foregroundColor(.secondary)
-            Text(numberStyle.attributedNumber(right, value: 1, role: .secondary))
+            numberStyle.outlinedNumberText(right, value: 1, role: .secondary)
         }
         .font(numberStyle.font(size: 20, weight: .semibold))
     }
@@ -97,18 +97,59 @@ struct GuessHintView: View {
         count: Int,
         separator: String,
         role: NumberStyle.Role
-    ) -> Text {
-        guard count > 0 else { return Text("0").foregroundColor(.secondary) }
-        var result = AttributedString()
+    ) -> AnyView {
+        if count <= 0 {
+            return AnyView(
+                Text("0")
+                    .foregroundColor(.secondary)
+            )
+        }
+
+        var fill = AttributedString()
+        var inner = AttributedString()
+        var outer = AttributedString()
+        var hasInner = false
+        var hasOuter = false
+
         for index in 0..<count {
             if index > 0 {
                 var separatorText = AttributedString(separator)
                 separatorText.foregroundColor = .secondary
-                result.append(separatorText)
+                fill.append(separatorText)
+
+                appendClear(separator, to: &inner)
+                appendClear(separator, to: &outer)
             }
-            let valueAttributed = numberStyle.attributedNumber(valueText, value: value, role: role)
-            result.append(valueAttributed)
+            fill.append(numberStyle.fillAttributedString(valueText, value: value, role: role))
+            if let innerSegment = numberStyle.innerOutlineAttributedString(valueText, value: value, role: role) {
+                inner.append(innerSegment)
+                hasInner = true
+            } else {
+                appendClear(valueText, to: &inner)
+            }
+            if let outerSegment = numberStyle.outerOutlineAttributedString(valueText, value: value, role: role) {
+                outer.append(outerSegment)
+                hasOuter = true
+            } else {
+                appendClear(valueText, to: &outer)
+            }
         }
-        return Text(result)
+
+        if hasInner || hasOuter {
+            return AnyView(
+                numberStyle.outlinedAttributedText(
+                    fill: fill,
+                    innerOutline: hasInner ? inner : nil,
+                    outerOutline: hasOuter ? outer : nil
+                )
+            )
+        }
+        return AnyView(Text(fill))
+    }
+
+    private func appendClear(_ text: String, to attributed: inout AttributedString) {
+        var clearText = AttributedString(text)
+        clearText.foregroundColor = .clear
+        attributed.append(clearText)
     }
 }

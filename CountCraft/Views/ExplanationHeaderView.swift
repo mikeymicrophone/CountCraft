@@ -25,31 +25,31 @@ struct ExplanationHeaderView: View {
                 Text("=")
                     .foregroundColor(.secondary)
                     .font(numberStyle.font(size: 28, weight: .semibold))
-                Text(numberStyle.attributedNumber(operation.answer(for: fact)))
+                numberStyle.outlinedNumberText(operation.answer(for: fact))
                     .font(numberStyle.font(size: 28, weight: .semibold))
             }
         } else if operation == .sets {
             HStack(spacing: 4) {
                 Text("C(")
                     .foregroundColor(.secondary)
-                Text(numberStyle.attributedNumber(fact.b + 1))
+                numberStyle.outlinedNumberText(fact.b + 1)
                 Text(",")
                     .foregroundColor(.secondary)
-                Text(numberStyle.attributedNumber(fact.a))
+                numberStyle.outlinedNumberText(fact.a)
                 Text(") =")
                     .foregroundColor(.secondary)
-                Text(numberStyle.attributedNumber(operation.answer(for: fact)))
+                numberStyle.outlinedNumberText(operation.answer(for: fact))
             }
             .font(numberStyle.font(size: 26, weight: .semibold))
         } else {
             HStack(spacing: 8) {
-                Text(numberStyle.attributedNumber(fact.a))
+                numberStyle.outlinedNumberText(fact.a)
                 Text(operation.symbol)
                     .foregroundColor(.secondary)
-                Text(numberStyle.attributedNumber(fact.b))
+                numberStyle.outlinedNumberText(fact.b)
                 Text("=")
                     .foregroundColor(.secondary)
-                Text(numberStyle.attributedNumber(operation.answer(for: fact)))
+                numberStyle.outlinedNumberText(operation.answer(for: fact))
             }
             .font(numberStyle.font(size: 28, weight: .semibold))
         }
@@ -63,9 +63,9 @@ struct ExplanationHeaderView: View {
         exponentOffset: CGFloat
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 2) {
-            Text(numberStyle.attributedNumber(base))
+            numberStyle.outlinedNumberText(base)
                 .font(numberStyle.font(size: baseSize, weight: .semibold))
-            Text(numberStyle.attributedNumber(exponent))
+            numberStyle.outlinedNumberText(exponent)
                 .font(numberStyle.font(size: exponentSize, weight: .semibold))
                 .baselineOffset(exponentOffset)
         }

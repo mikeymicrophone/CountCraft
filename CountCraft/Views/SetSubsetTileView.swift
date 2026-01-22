@@ -12,12 +12,19 @@ struct SetSubsetTileView: View {
     let numberStyle: NumberStyle
 
     var body: some View {
-        Text(setText)
-            .font(numberStyle.font(size: tileFontSize, weight: .semibold))
-            .multilineTextAlignment(.center)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 10)
-            .frame(minWidth: 80)
+        let layers = setTextLayers()
+        Group {
+            numberStyle.outlinedAttributedText(
+                fill: layers.fill,
+                innerOutline: layers.inner,
+                outerOutline: layers.outer
+            )
+        }
+        .font(numberStyle.font(size: tileFontSize, weight: .semibold))
+        .multilineTextAlignment(.center)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .frame(minWidth: 80)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))
     }
@@ -32,31 +39,61 @@ struct SetSubsetTileView: View {
         return 12
     }
 
-    private var setText: AttributedString {
-        var result = AttributedString()
-        var open = AttributedString("{")
-        open.foregroundColor = .secondary
-        result.append(open)
+    private func setTextLayers() -> (fill: AttributedString, inner: AttributedString?, outer: AttributedString?) {
+        var fill = AttributedString()
+        var inner = AttributedString()
+        var outer = AttributedString()
+        var hasInner = false
+        var hasOuter = false
 
+        appendSymbol("{", fill: &fill, inner: &inner, outer: &outer)
         if !values.isEmpty {
             for (index, value) in values.enumerated() {
                 if index > 0 {
-                    var comma = AttributedString(", ")
-                    comma.foregroundColor = .secondary
-                    result.append(comma)
+                    appendSymbol(", ", fill: &fill, inner: &inner, outer: &outer)
                 }
-                let valueText = numberStyle.attributedNumber(
-                    NumberFormatting.string(from: value),
-                    value: value
-                )
-                result.append(valueText)
+                let text = NumberFormatting.string(from: value)
+                fill.append(numberStyle.fillAttributedString(text, value: value))
+                if let innerSegment = numberStyle.innerOutlineAttributedString(text, value: value) {
+                    inner.append(innerSegment)
+                    hasInner = true
+                } else {
+                    appendClear(text, to: &inner)
+                }
+                if let outerSegment = numberStyle.outerOutlineAttributedString(text, value: value) {
+                    outer.append(outerSegment)
+                    hasOuter = true
+                } else {
+                    appendClear(text, to: &outer)
+                }
             }
         }
+        appendSymbol("}", fill: &fill, inner: &inner, outer: &outer)
 
-        var close = AttributedString("}")
-        close.foregroundColor = .secondary
-        result.append(close)
-        return result
+        return (
+            fill: fill,
+            inner: hasInner ? inner : nil,
+            outer: hasOuter ? outer : nil
+        )
+    }
+
+    private func appendSymbol(
+        _ text: String,
+        fill: inout AttributedString,
+        inner: inout AttributedString,
+        outer: inout AttributedString
+    ) {
+        var symbol = AttributedString(text)
+        symbol.foregroundColor = .secondary
+        fill.append(symbol)
+        appendClear(text, to: &inner)
+        appendClear(text, to: &outer)
+    }
+
+    private func appendClear(_ text: String, to attributed: inout AttributedString) {
+        var clear = AttributedString(text)
+        clear.foregroundColor = .clear
+        attributed.append(clear)
     }
 }
 

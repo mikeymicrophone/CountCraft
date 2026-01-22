@@ -60,7 +60,7 @@ struct TablePracticeGridView: View {
         let borderColor = value.flatMap { numberStyle.borderColor(for: $0) }
         return Group {
             if let value {
-                Text(numberStyle.attributedNumber(text, value: value))
+                numberStyle.outlinedNumberText(text, value: value)
             } else {
                 Text(text)
                     .foregroundColor(.primary)

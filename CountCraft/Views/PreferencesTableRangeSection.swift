@@ -29,7 +29,7 @@ struct PreferencesTableRangeSection: View {
                 label: "X:",
                 lowerValue: axisMinXBinding,
                 upperValue: axisMaxXBinding,
-                bounds: 0...12,
+                bounds: 0...40,
                 onReset: {
                 onResetX()
             },
@@ -40,7 +40,7 @@ struct PreferencesTableRangeSection: View {
                 label: "Y:",
                 lowerValue: axisMinYBinding,
                 upperValue: axisMaxYBinding,
-                bounds: 0...12,
+                bounds: 0...40,
                 onReset: {
                 onResetY()
             },
