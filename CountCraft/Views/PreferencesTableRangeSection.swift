@@ -49,7 +49,7 @@ struct PreferencesTableRangeSection: View {
                 showsTickLabels: true
             )
 
-            if selectedRange == .addition {
+            if selectedRange == .addition || selectedRange == .multiplication {
                 Stepper(value: axisStepXBinding, in: 1...10) {
                     Text("X step: \(axisStepXBinding.wrappedValue)")
                 }

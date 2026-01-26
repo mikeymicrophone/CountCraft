@@ -344,8 +344,9 @@ struct TablePracticeView: View {
         operation: OperationType,
         axis: AxisValues
     ) -> GridData {
-        let stepX = operation == .addition ? axis.stepX : 1
-        let stepY = operation == .addition ? axis.stepY : 1
+        let usesStep = operation == .addition || operation == .multiplication
+        let stepX = usesStep ? axis.stepX : 1
+        let stepY = usesStep ? axis.stepY : 1
         let rowValues = normalizedRange(minValue: axis.minY, maxValue: axis.maxY, step: stepY)
         let columnValues = normalizedRange(minValue: axis.minX, maxValue: axis.maxX, step: stepX)
         let rowSet = Set(rowValues)
