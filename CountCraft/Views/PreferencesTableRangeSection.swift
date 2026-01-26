@@ -13,6 +13,8 @@ struct PreferencesTableRangeSection: View {
     let axisMaxXBinding: Binding<Int>
     let axisMinYBinding: Binding<Int>
     let axisMaxYBinding: Binding<Int>
+    let axisStepXBinding: Binding<Int>
+    let axisStepYBinding: Binding<Int>
     let onResetX: () -> Void
     let onResetY: () -> Void
 
@@ -46,6 +48,16 @@ struct PreferencesTableRangeSection: View {
             },
                 showsTickLabels: true
             )
+
+            if selectedRange == .addition {
+                Stepper(value: axisStepXBinding, in: 1...10) {
+                    Text("X step: \(axisStepXBinding.wrappedValue)")
+                }
+
+                Stepper(value: axisStepYBinding, in: 1...10) {
+                    Text("Y step: \(axisStepYBinding.wrappedValue)")
+                }
+            }
         }
     }
 }

@@ -54,6 +54,8 @@ struct PreferencesView: View {
                     axisMaxXBinding: axisMaxXBinding,
                     axisMinYBinding: axisMinYBinding,
                     axisMaxYBinding: axisMaxYBinding,
+                    axisStepXBinding: axisStepXBinding,
+                    axisStepYBinding: axisStepYBinding,
                     onResetX: {
                         setAxisMinX(0)
                         setAxisMaxX(12)
@@ -103,6 +105,14 @@ struct PreferencesView: View {
         UserDefaults.standard.object(forKey: gridKey("prefAxisMaxY")) as? Int ?? 12
     }
 
+    private var axisStepX: Int {
+        UserDefaults.standard.object(forKey: gridKey("prefAxisStepX")) as? Int ?? 1
+    }
+
+    private var axisStepY: Int {
+        UserDefaults.standard.object(forKey: gridKey("prefAxisStepY")) as? Int ?? 1
+    }
+
     private var axisMinXBinding: Binding<Int> {
         Binding(
             get: {
@@ -143,6 +153,26 @@ struct PreferencesView: View {
         )
     }
 
+    private var axisStepXBinding: Binding<Int> {
+        Binding(
+            get: {
+                _ = axisRefresh
+                return axisStepX
+            },
+            set: { setAxisStepX($0) }
+        )
+    }
+
+    private var axisStepYBinding: Binding<Int> {
+        Binding(
+            get: {
+                _ = axisRefresh
+                return axisStepY
+            },
+            set: { setAxisStepY($0) }
+        )
+    }
+
     private func setAxisMinX(_ value: Int) {
         let clamped = clamp(value)
         UserDefaults.standard.set(clamped, forKey: gridKey("prefAxisMinX"))
@@ -179,8 +209,24 @@ struct PreferencesView: View {
         axisRefresh += 1
     }
 
+    private func setAxisStepX(_ value: Int) {
+        let clamped = clampStep(value)
+        UserDefaults.standard.set(clamped, forKey: gridKey("prefAxisStepX"))
+        axisRefresh += 1
+    }
+
+    private func setAxisStepY(_ value: Int) {
+        let clamped = clampStep(value)
+        UserDefaults.standard.set(clamped, forKey: gridKey("prefAxisStepY"))
+        axisRefresh += 1
+    }
+
     private func clamp(_ value: Int) -> Int {
         min(max(value, 0), 40)
+    }
+
+    private func clampStep(_ value: Int) -> Int {
+        min(max(value, 1), 10)
     }
 
     private func gridKey(_ baseKey: String) -> String {
