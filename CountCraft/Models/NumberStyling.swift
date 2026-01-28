@@ -16,7 +16,7 @@ struct NumberStyling {
     static func color(for value: Int, enabled: Bool) -> Color? {
         guard enabled else { return nil }
         let absolute = abs(value)
-        if absolute < 10 {
+        if absolute <= 12 {
             return palette[absolute % palette.count]
         }
         let onesDigit = absolute % 10

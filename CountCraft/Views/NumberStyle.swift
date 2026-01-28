@@ -19,8 +19,6 @@ struct NumberStyle: Equatable {
 
     private static let innerOutlineRadius = 1
     private static let outerOutlineRadius = 2
-    private static let innerContrastBoost: CGFloat = 0.25
-    private static let outerContrastBoost: CGFloat = 0.55
     private static let outerStrokeAlpha: CGFloat = 0.95
     private static let innerOffsets = outlineOffsets(radius: innerOutlineRadius)
     private static let outerOffsets = outlineOffsets(radius: outerOutlineRadius)
@@ -86,7 +84,6 @@ struct NumberStyle: Equatable {
             text,
             value: value,
             role: role,
-            boost: Self.innerContrastBoost,
             alpha: 1
         )
     }
@@ -100,7 +97,6 @@ struct NumberStyle: Equatable {
             text,
             value: value,
             role: role,
-            boost: Self.outerContrastBoost,
             alpha: Self.outerStrokeAlpha
         )
     }
@@ -109,17 +105,11 @@ struct NumberStyle: Equatable {
         _ text: String,
         value: Int,
         role: Role,
-        boost: CGFloat,
         alpha: CGFloat
     ) -> AttributedString? {
+        guard abs(value) < 100 else { return nil }
         guard let stroke = borderColor(for: value) else { return nil }
-        let fallback: Color = role == .primary ? .primary : .secondary
-        let fillColor = color(for: value) ?? fallback
-        let strokeUIColor = contrastedStrokeColor(
-            UIColor(stroke),
-            fill: UIColor(fillColor),
-            boost: boost
-        ).withAlphaComponent(alpha)
+        let strokeUIColor = UIColor(stroke).withAlphaComponent(alpha)
         var attributed = AttributedString(text)
         attributed.foregroundColor = Color(strokeUIColor)
         return attributed
@@ -152,20 +142,6 @@ struct NumberStyle: Equatable {
         return offsets
     }
 
-    private func contrastedStrokeColor(_ stroke: UIColor, fill: UIColor, boost: CGFloat) -> UIColor {
-        let fillLuminance = fill.luminance()
-        let delta = fillLuminance > 0.6 ? -boost : boost
-        var hue: CGFloat = 0
-        var saturation: CGFloat = 0
-        var brightness: CGFloat = 0
-        var alpha: CGFloat = 0
-        if stroke.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) {
-            let newBrightness = min(max(brightness + delta, 0), 1)
-            let newSaturation = min(max(saturation + boost * 0.4, 0), 1)
-            return UIColor(hue: hue, saturation: newSaturation, brightness: newBrightness, alpha: alpha)
-        }
-        return stroke.adjustedBrightness(delta)
-    }
 }
 
 extension View {
@@ -179,50 +155,5 @@ extension View {
         } else {
             self
         }
-    }
-}
-
-private extension UIColor {
-    func luminance() -> CGFloat {
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        if getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
-            return 0.2126 * red + 0.7152 * green + 0.0722 * blue
-        }
-        var white: CGFloat = 0
-        if getWhite(&white, alpha: &alpha) {
-            return white
-        }
-        return 0.5
-    }
-
-    func adjustedBrightness(_ delta: CGFloat) -> UIColor {
-        var hue: CGFloat = 0
-        var saturation: CGFloat = 0
-        var brightness: CGFloat = 0
-        var alpha: CGFloat = 0
-        if getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) {
-            let newBrightness = min(max(brightness + delta, 0), 1)
-            return UIColor(hue: hue, saturation: saturation, brightness: newBrightness, alpha: alpha)
-        }
-        var white: CGFloat = 0
-        if getWhite(&white, alpha: &alpha) {
-            let newWhite = min(max(white + delta, 0), 1)
-            return UIColor(white: newWhite, alpha: alpha)
-        }
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        if getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
-            return UIColor(
-                red: min(max(red + delta, 0), 1),
-                green: min(max(green + delta, 0), 1),
-                blue: min(max(blue + delta, 0), 1),
-                alpha: alpha
-            )
-        }
-        return self
     }
 }
