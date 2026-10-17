@@ -90,19 +90,19 @@ struct PreferencesView: View {
     }
 
     private var axisMinX: Int {
-        UserDefaults.standard.integer(forKey: gridKey("prefAxisMinX"))
+        clamp(UserDefaults.standard.integer(forKey: gridKey("prefAxisMinX")))
     }
 
     private var axisMaxX: Int {
-        UserDefaults.standard.object(forKey: gridKey("prefAxisMaxX")) as? Int ?? 12
+        clamp(UserDefaults.standard.object(forKey: gridKey("prefAxisMaxX")) as? Int ?? 12)
     }
 
     private var axisMinY: Int {
-        UserDefaults.standard.integer(forKey: gridKey("prefAxisMinY"))
+        clamp(UserDefaults.standard.integer(forKey: gridKey("prefAxisMinY")))
     }
 
     private var axisMaxY: Int {
-        UserDefaults.standard.object(forKey: gridKey("prefAxisMaxY")) as? Int ?? 12
+        clamp(UserDefaults.standard.object(forKey: gridKey("prefAxisMaxY")) as? Int ?? 12)
     }
 
     private var axisStepX: Int {
@@ -222,7 +222,7 @@ struct PreferencesView: View {
     }
 
     private func clamp(_ value: Int) -> Int {
-        min(max(value, 0), 40)
+        min(max(value, selectedRange.operandRange.lowerBound), selectedRange.operandRange.upperBound)
     }
 
     private func clampStep(_ value: Int) -> Int {

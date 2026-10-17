@@ -14,6 +14,22 @@ enum OperationType: String, CaseIterable, Identifiable {
     case sets
 
     var id: String { rawValue }
+
+    var operandRange: ClosedRange<Int> {
+        self == .exponent ? 0...12 : 0...40
+    }
+
+    func supports(_ fact: MathFact) -> Bool {
+        operandRange.contains(fact.a) && operandRange.contains(fact.b)
+    }
+
+    func axisValues(minValue: Int, maxValue: Int, step: Int) -> [Int] {
+        let lower = min(max(minValue, operandRange.lowerBound), operandRange.upperBound)
+        let upper = min(max(maxValue, operandRange.lowerBound), operandRange.upperBound)
+        let clampedStep = min(max(step, 1), 10)
+        return Array(stride(from: min(lower, upper), through: max(lower, upper), by: clampedStep))
+    }
+
     var title: String {
         switch self {
         case .addition:

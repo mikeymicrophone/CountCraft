@@ -43,6 +43,10 @@ struct ProbabilityGridView: View {
     }
 
     var body: some View {
+        let rows = valuesX
+        let columns = valuesY
+        let fractionsByTrials = precomputedFractions(for: columns)
+
         VStack(spacing: 12) {
             Text(title)
                 .font(.headline)
@@ -52,17 +56,21 @@ struct ProbabilityGridView: View {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         headerCell("x/y")
-                        ForEach(valuesY, id: \.self) { value in
+                        ForEach(columns, id: \.self) { value in
                             headerCell(NumberFormatting.string(from: value), value: value)
                         }
                     }
 
-                    ForEach(valuesX, id: \.self) { threshold in
+                    ForEach(rows, id: \.self) { threshold in
                         HStack(spacing: 8) {
                             headerCell(">= \(NumberFormatting.string(from: threshold))", value: threshold)
-                            ForEach(valuesY, id: \.self) { throwCount in
+                            ForEach(columns, id: \.self) { throwCount in
                                 ProbabilityGridCell(
-                                    label: probabilityLabel(threshold: threshold, trials: throwCount),
+                                    label: probabilityLabel(
+                                        threshold: threshold,
+                                        trials: throwCount,
+                                        fractionsByTrials: fractionsByTrials
+                                    ),
                                     numberStyle: numberStyle,
                                     isDisabled: threshold > throwCount
                                 )
@@ -88,8 +96,8 @@ struct ProbabilityGridView: View {
         .sheet(item: $activeCell) { cell in
             ProbabilityExplanationSheet(
                 cell: cell,
-                rowValues: valuesX,
-                columnValues: valuesY,
+                rowValues: rows,
+                columnValues: columns,
                 format: format,
                 numberStyle: numberStyle,
                 onNavigate: { newThreshold, newTrials in
@@ -147,16 +155,38 @@ struct ProbabilityGridView: View {
         return Array(upper...lower)
     }
 
-    private func probabilityLabel(threshold: Int, trials: Int) -> String {
+    private func precomputedFractions(for columns: [Int]) -> [Int: [Fraction]] {
+        var table: [Int: [Fraction]] = [:]
+        table.reserveCapacity(columns.count)
+        for trials in columns {
+            table[trials] = Probability.columnAtLeastSuccesses(
+                trials: trials,
+                successOutcomes: successOutcomes,
+                totalOutcomes: totalOutcomes
+            )
+        }
+        return table
+    }
+
+    private func probabilityLabel(
+        threshold: Int,
+        trials: Int,
+        fractionsByTrials: [Int: [Fraction]]
+    ) -> String {
         if threshold > trials {
             return "∅"
         }
-        let fraction = Probability.atLeastSuccesses(
-            trials: trials,
-            successesAtLeast: threshold,
-            successOutcomes: successOutcomes,
-            totalOutcomes: totalOutcomes
-        )
+        let fraction: Fraction
+        if let column = fractionsByTrials[trials], threshold >= 0, threshold < column.count {
+            fraction = column[threshold]
+        } else {
+            fraction = Probability.atLeastSuccesses(
+                trials: trials,
+                successesAtLeast: threshold,
+                successOutcomes: successOutcomes,
+                totalOutcomes: totalOutcomes
+            )
+        }
         switch format {
         case .fraction:
             return fraction.formatted
@@ -420,7 +450,8 @@ struct ProbabilityExplanationSheet: View {
     }
 
     private var resolvedLine: String? {
-        guard cell.threshold <= cell.trials else { return nil }
+        guard cell.threshold <= cell.trials,
+              pow(Double(cell.totalOutcomes), Double(cell.trials)) <= 1e35 else { return nil }
         var parts: [String] = []
         for k in cell.threshold...cell.trials {
             let chooseValue = Combinatorics.choose(n: cell.trials, k: k)

@@ -16,6 +16,10 @@ enum RangeSelection: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var operandRange: ClosedRange<Int> {
+        OperationType(rawValue: rawValue)?.operandRange ?? 0...40
+    }
+
     var title: String {
         switch self {
         case .addition:

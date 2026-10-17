@@ -49,7 +49,7 @@ struct ExplanationNavigationArrows: View {
                 if let target = switchLeftTarget {
                     arrowButton(
                         systemName: "arrow.left",
-                        enabled: onSwitchOperation != nil
+                        enabled: onSwitchOperation != nil && target.supports(fact)
                     ) {
                         onSwitchOperation?(target)
                     }
@@ -59,7 +59,7 @@ struct ExplanationNavigationArrows: View {
                 if let target = switchRightTarget {
                     arrowButton(
                         systemName: "arrow.right",
-                        enabled: onSwitchOperation != nil
+                        enabled: onSwitchOperation != nil && target.supports(fact)
                     ) {
                         onSwitchOperation?(target)
                     }

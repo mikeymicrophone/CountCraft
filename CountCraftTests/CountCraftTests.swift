@@ -10,6 +10,30 @@ import Testing
 @testable import CountCraft
 
 struct CountCraftTests {
+    @Test func exponentAxesClampPreviouslySavedRanges() {
+        let operation = OperationType.exponent
+        #expect(operation.axisValues(minValue: 0, maxValue: 40, step: 1) == Array(0...12))
+        #expect(operation.axisValues(minValue: 18, maxValue: 40, step: 1) == [12])
+        #expect(operation.axisValues(minValue: 40, maxValue: -1, step: 1) == Array(0...12))
+        #expect(RangeSelection.exponent.operandRange == operation.operandRange)
+
+        for a in operation.operandRange {
+            for b in operation.operandRange {
+                let fact = MathFact(a: a, b: b)
+                #expect(operation.supports(fact))
+                #expect(operation.answer(for: fact) >= 0)
+            }
+        }
+        #expect(operation.answer(for: MathFact(a: 12, b: 12)) == 8_916_100_448_256)
+    }
+
+    @Test func operationSwitchRejectsLargeExponentOperands() {
+        #expect(!OperationType.exponent.supports(MathFact(a: 12, b: 18)))
+        #expect(!OperationType.exponent.supports(MathFact(a: 40, b: 12)))
+        #expect(OperationType.multiplication.supports(MathFact(a: 40, b: 40)))
+        #expect(OperationType.multiplication.axisValues(minValue: 0, maxValue: 40, step: 10) == [0, 10, 20, 30, 40])
+    }
+
     @Test func operationAnswers() {
         let fact = MathFact(a: 7, b: 6)
 
@@ -117,6 +141,67 @@ struct CountCraftTests {
         let fraction = Fraction(numerator: 6, denominator: 8)
         #expect(fraction.numerator == Decimal(3))
         #expect(fraction.denominator == Decimal(4))
+    }
+
+    @Test func combinatoricsChooseHandlesLargeInputsWithoutOverflow() {
+        #expect(Combinatorics.choose(n: 40, k: 20) == 137_846_528_820)
+    }
+
+    @Test func probabilityColumnMatchesPointQueriesAndHandlesLargeTrials() {
+        let column = Probability.columnAtLeastSuccesses(
+            trials: 6,
+            successOutcomes: 1,
+            totalOutcomes: 6
+        )
+        #expect(column.count == 7)
+        for threshold in 0...6 {
+            let expected = Probability.atLeastSuccesses(
+                trials: 6,
+                successesAtLeast: threshold,
+                successOutcomes: 1,
+                totalOutcomes: 6
+            )
+            #expect(column[threshold] == expected)
+        }
+
+        let highCardPulls = Probability.atLeastSuccesses(
+            trials: 30,
+            successesAtLeast: 1,
+            successOutcomes: 13,
+            totalOutcomes: 52
+        )
+        #expect(highCardPulls.value > 0.99)
+        #expect(highCardPulls.value <= 1.0)
+    }
+
+    @Test func reviewGuessesFirstTimeFilterDistinguishesOperations() {
+        let additionGuess = PracticeGuess(
+            operation: .addition,
+            difficulty: .medium,
+            a: 2,
+            b: 3,
+            correctAnswer: 5,
+            userAnswer: 5,
+            isCorrect: true,
+            inputMode: .multipleChoice,
+            answersShown: false,
+            profile: nil
+        )
+        let multiplicationGuess = PracticeGuess(
+            operation: .multiplication,
+            difficulty: .medium,
+            a: 2,
+            b: 3,
+            correctAnswer: 6,
+            userAnswer: 6,
+            isCorrect: true,
+            inputMode: .multipleChoice,
+            answersShown: false,
+            profile: nil
+        )
+        let viewModel = ReviewGuessesViewModel(guesses: [additionGuess, multiplicationGuess])
+        viewModel.onlyFirstTime = true
+        #expect(viewModel.filteredGuesses.count == 2)
     }
 }
 

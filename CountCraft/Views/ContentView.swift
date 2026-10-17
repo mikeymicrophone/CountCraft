@@ -18,12 +18,13 @@ struct ContentView: View {
 
     var body: some View {
         let currentGuesses = activeGuesses
+        let guessesByOperation = Dictionary(grouping: currentGuesses, by: \.operation)
         let currentProfile = selectedProfile
         TabView(selection: $selectedTab) {
             LazyTabItem(selection: selectedTab, tag: .addition) {
                 TablePracticeView(
                     operation: .addition,
-                    guesses: currentGuesses,
+                    guesses: guessesByOperation[OperationType.addition.rawValue] ?? [],
                     profile: currentProfile,
                     onGuess: recordGuess,
                     onSwitchOperation: switchOperation,
@@ -38,7 +39,7 @@ struct ContentView: View {
             LazyTabItem(selection: selectedTab, tag: .multiplication) {
                 TablePracticeView(
                     operation: .multiplication,
-                    guesses: currentGuesses,
+                    guesses: guessesByOperation[OperationType.multiplication.rawValue] ?? [],
                     profile: currentProfile,
                     onGuess: recordGuess,
                     onSwitchOperation: switchOperation,
@@ -53,7 +54,7 @@ struct ContentView: View {
             LazyTabItem(selection: selectedTab, tag: .exponent) {
                 TablePracticeView(
                     operation: .exponent,
-                    guesses: currentGuesses,
+                    guesses: guessesByOperation[OperationType.exponent.rawValue] ?? [],
                     profile: currentProfile,
                     onGuess: recordGuess,
                     onSwitchOperation: switchOperation,
@@ -68,7 +69,7 @@ struct ContentView: View {
             LazyTabItem(selection: selectedTab, tag: .sets) {
                 TablePracticeView(
                     operation: .sets,
-                    guesses: currentGuesses,
+                    guesses: guessesByOperation[OperationType.sets.rawValue] ?? [],
                     profile: currentProfile,
                     onGuess: recordGuess,
                     onSwitchOperation: switchOperation,

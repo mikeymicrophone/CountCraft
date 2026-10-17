@@ -18,6 +18,7 @@ struct ReviewGuessesView: View {
     }
 
     var body: some View {
+        let filteredGuesses = viewModel.filteredGuesses
         NavigationStack {
             List {
                 Section {
@@ -44,7 +45,7 @@ struct ReviewGuessesView: View {
                     }
                     .pickerStyle(.segmented)
 
-                    Text("Guesses: \(viewModel.filteredGuesses.count)")
+                    Text("Guesses: \(filteredGuesses.count)")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
@@ -58,7 +59,7 @@ struct ReviewGuessesView: View {
                         onFilterA: { viewModel.activeOperandFilter = .a },
                         onFilterB: { viewModel.activeOperandFilter = .b }
                     )
-                    ForEach(viewModel.filteredGuesses) { guess in
+                    ForEach(filteredGuesses) { guess in
                         NavigationLink {
                             PairHistoryView(
                                 guesses: viewModel.guesses,

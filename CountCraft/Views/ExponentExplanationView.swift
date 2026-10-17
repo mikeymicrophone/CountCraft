@@ -15,14 +15,14 @@ struct ExponentExplanationView: View {
 
     @State private var currentStep: Int?
     @State private var isPlaying: Bool = false
-    @State private var timer: Timer?
-
-    private var step: Int {
-        currentStep ?? exponent
-    }
+    @State private var playTask: Task<Void, Never>?
 
     private var maxStep: Int {
         min(max(exponent, 1), 12)
+    }
+
+    private var step: Int {
+        min(max(currentStep ?? exponent, 1), maxStep)
     }
 
     private func valueAtStep(_ step: Int) -> Int {
@@ -42,21 +42,40 @@ struct ExponentExplanationView: View {
         return "\(NumberFormatting.string(from: leftValue)) \(groupLabel) of \(NumberFormatting.string(from: rightValue)) = \(NumberFormatting.string(from: currentValue))"
     }
 
+    private func playbackDelay(for step: Int) -> TimeInterval {
+        switch step {
+        case 1...3:
+            return 1.5
+        case 4...6:
+            return 2.4
+        case 7...9:
+            return 4.0
+        default:
+            return 5.8
+        }
+    }
+
     private func startPlaying() {
+        stopPlaying()
         isPlaying = true
-        timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
-            if step < maxStep {
-                currentStep = step + 1
-            } else {
-                currentStep = 1
+        playTask = Task { @MainActor in
+            while !Task.isCancelled && isPlaying {
+                let delay = playbackDelay(for: step)
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled && isPlaying else { break }
+                if step < maxStep {
+                    currentStep = step + 1
+                } else {
+                    currentStep = 1
+                }
             }
         }
     }
 
     private func stopPlaying() {
         isPlaying = false
-        timer?.invalidate()
-        timer = nil
+        playTask?.cancel()
+        playTask = nil
     }
 
     var body: some View {

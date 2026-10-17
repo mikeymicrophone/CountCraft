@@ -32,7 +32,7 @@ struct TablePracticeView: View {
     @State private var isAutoExplaining = false
     @State private var autoExplainFact: MathFact?
     @State private var autoExplainTask: Task<Void, Never>?
-    @State private var gridData: GridData
+    @State private var gridData = GridData.empty
     @State private var gridToken = 0
 
     init(
@@ -55,14 +55,6 @@ struct TablePracticeView: View {
         _axisMaxY = AppStorage(wrappedValue: 12, "prefAxisMaxY-\(operation.rawValue)")
         _axisStepX = AppStorage(wrappedValue: 1, "prefAxisStepX-\(operation.rawValue)")
         _axisStepY = AppStorage(wrappedValue: 1, "prefAxisStepY-\(operation.rawValue)")
-        let axis = Self.axisValues(for: operation)
-        _gridData = State(
-            initialValue: Self.makeGridData(
-                guesses: guesses,
-                operation: operation,
-                axis: axis
-            )
-        )
     }
 
     var body: some View {
@@ -71,7 +63,7 @@ struct TablePracticeView: View {
                 TablePracticeProgressView(
                     attempts: gridData.attempts,
                     correct: gridData.correct,
-                    mastered: gridData.statsByFact.values.filter { $0.isMastered }.count,
+                    mastered: gridData.mastered,
                     totalFacts: gridData.rowValues.count * gridData.columnValues.count
                 )
                 if operation != .sets {
@@ -162,22 +154,7 @@ struct TablePracticeView: View {
         .onChange(of: guesses) { _, _ in
             refreshGridData()
         }
-        .onChange(of: axisMinX) { _, _ in
-            refreshGridData()
-        }
-        .onChange(of: axisMaxX) { _, _ in
-            refreshGridData()
-        }
-        .onChange(of: axisMinY) { _, _ in
-            refreshGridData()
-        }
-        .onChange(of: axisMaxY) { _, _ in
-            refreshGridData()
-        }
-        .onChange(of: axisStepX) { _, _ in
-            refreshGridData()
-        }
-        .onChange(of: axisStepY) { _, _ in
+        .onChange(of: currentAxis) { _, _ in
             refreshGridData()
         }
         .onChange(of: pendingExplanation) { _, _ in
@@ -189,8 +166,8 @@ struct TablePracticeView: View {
         .overlay(autoExplainOverlay)
     }
 
-    private func refreshGridData() {
-        let axis = AxisValues(
+    private var currentAxis: AxisValues {
+        AxisValues(
             minX: axisMinX,
             maxX: axisMaxX,
             minY: axisMinY,
@@ -198,7 +175,10 @@ struct TablePracticeView: View {
             stepX: axisStepX,
             stepY: axisStepY
         )
-        gridData = Self.makeGridData(guesses: guesses, operation: operation, axis: axis)
+    }
+
+    private func refreshGridData() {
+        gridData = Self.makeGridData(guesses: guesses, operation: operation, axis: currentAxis)
         gridToken &+= 1
     }
 
@@ -231,18 +211,9 @@ struct TablePracticeView: View {
 
     private func openPendingExplanationIfNeeded() {
         guard let fact = pendingExplanation else { return }
-        activeSheet = TableSheetItem(fact: fact, mode: .explain)
         pendingExplanation = nil
-    }
-
-    private static func normalizedRange(minValue: Int, maxValue: Int, step: Int) -> [Int] {
-        let lower = min(max(minValue, 0), 40)
-        let upper = min(max(maxValue, 0), 40)
-        let clampedStep = min(max(step, 1), 10)
-        if lower <= upper {
-            return Array(stride(from: lower, through: upper, by: clampedStep))
-        }
-        return Array(stride(from: upper, through: lower, by: clampedStep))
+        guard operation.supports(fact) else { return }
+        activeSheet = TableSheetItem(fact: fact, mode: .explain)
     }
 
     private var autoExplainOverlay: some View {
@@ -323,22 +294,6 @@ struct TablePracticeView: View {
         return next
     }
 
-    private static func axisValues(for operation: OperationType) -> AxisValues {
-        let minXKey = "prefAxisMinX-\(operation.rawValue)"
-        let maxXKey = "prefAxisMaxX-\(operation.rawValue)"
-        let minYKey = "prefAxisMinY-\(operation.rawValue)"
-        let maxYKey = "prefAxisMaxY-\(operation.rawValue)"
-        let stepXKey = "prefAxisStepX-\(operation.rawValue)"
-        let stepYKey = "prefAxisStepY-\(operation.rawValue)"
-        let minX = UserDefaults.standard.integer(forKey: minXKey)
-        let maxX = UserDefaults.standard.object(forKey: maxXKey) as? Int ?? 12
-        let minY = UserDefaults.standard.integer(forKey: minYKey)
-        let maxY = UserDefaults.standard.object(forKey: maxYKey) as? Int ?? 12
-        let stepX = UserDefaults.standard.object(forKey: stepXKey) as? Int ?? 1
-        let stepY = UserDefaults.standard.object(forKey: stepYKey) as? Int ?? 1
-        return AxisValues(minX: minX, maxX: maxX, minY: minY, maxY: maxY, stepX: stepX, stepY: stepY)
-    }
-
     private static func makeGridData(
         guesses: [PracticeGuess],
         operation: OperationType,
@@ -347,8 +302,8 @@ struct TablePracticeView: View {
         let usesStep = operation == .addition || operation == .multiplication
         let stepX = usesStep ? axis.stepX : 1
         let stepY = usesStep ? axis.stepY : 1
-        let rowValues = normalizedRange(minValue: axis.minY, maxValue: axis.maxY, step: stepY)
-        let columnValues = normalizedRange(minValue: axis.minX, maxValue: axis.maxX, step: stepX)
+        let rowValues = operation.axisValues(minValue: axis.minY, maxValue: axis.maxY, step: stepY)
+        let columnValues = operation.axisValues(minValue: axis.minX, maxValue: axis.maxX, step: stepX)
         let rowSet = Set(rowValues)
         let columnSet = Set(columnValues)
         var attempts = 0
@@ -362,8 +317,11 @@ struct TablePracticeView: View {
                 correct += 1
             }
             let key = FactKey(a: guess.a, b: guess.b)
-            let current = stats[key] ?? FactStats()
-            stats[key] = current.adding(guess: guess)
+            stats[key, default: FactStats()].add(guess: guess)
+        }
+
+        let mastered = stats.values.reduce(into: 0) { count, item in
+            if item.isMastered { count += 1 }
         }
 
         return GridData(
@@ -371,12 +329,13 @@ struct TablePracticeView: View {
             columnValues: columnValues,
             attempts: attempts,
             correct: correct,
+            mastered: mastered,
             statsByFact: stats
         )
     }
 }
 
-private struct AxisValues {
+private struct AxisValues: Equatable {
     let minX: Int
     let maxX: Int
     let minY: Int
@@ -390,7 +349,17 @@ private struct GridData {
     let columnValues: [Int]
     let attempts: Int
     let correct: Int
+    let mastered: Int
     let statsByFact: [FactKey: FactStats]
+
+    static let empty = GridData(
+        rowValues: [],
+        columnValues: [],
+        attempts: 0,
+        correct: 0,
+        mastered: 0,
+        statsByFact: [:]
+    )
 }
 
 private struct TablePracticeGridHost: View, Equatable {

@@ -28,13 +28,15 @@ final class ReviewGuessesViewModel: ObservableObject {
 
     var filteredGuesses: [PracticeGuess] {
         let dateCutoff = dateFilter.cutoffDate
+        let firstIds = onlyFirstTime ? firstTimeGuessIds : []
+        let rangeA = operandMinA...operandMaxA
+        let rangeB = operandMinB...operandMaxB
         let filtered = sortedGuesses.filter { guess in
             let dateMatch = dateCutoff.map { guess.timestamp >= $0 } ?? true
             let correctnessMatch = correctnessFilter.matches(guess)
-            let firstTimeMatch = !onlyFirstTime || firstTimeGuessIds.contains(guess.id)
+            let firstTimeMatch = !onlyFirstTime || firstIds.contains(guess.id)
             let operationMatch = operationFilter.matches(guess)
-            let operandMatch = (operandMinA...operandMaxA).contains(guess.a)
-                && (operandMinB...operandMaxB).contains(guess.b)
+            let operandMatch = rangeA.contains(guess.a) && rangeB.contains(guess.b)
             return dateMatch && correctnessMatch && firstTimeMatch && operationMatch && operandMatch
         }
         let recent = recentFilter.apply(to: filtered)
@@ -45,10 +47,16 @@ final class ReviewGuessesViewModel: ObservableObject {
         guesses.sorted { $0.timestamp > $1.timestamp }
     }
 
+    private struct OperationFactKey: Hashable {
+        let operation: String
+        let a: Int
+        let b: Int
+    }
+
     private var firstTimeGuessIds: Set<UUID> {
-        var earliest: [FactKey: PracticeGuess] = [:]
+        var earliest: [OperationFactKey: PracticeGuess] = [:]
         for guess in guesses {
-            let key = FactKey(a: guess.a, b: guess.b)
+            let key = OperationFactKey(operation: guess.operation, a: guess.a, b: guess.b)
             if let current = earliest[key] {
                 if guess.timestamp < current.timestamp {
                     earliest[key] = guess

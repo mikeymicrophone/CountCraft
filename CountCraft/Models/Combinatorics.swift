@@ -16,9 +16,22 @@ struct Combinatorics {
         let k = min(k, n - k)
         var result = 1
         for i in 1...k {
-            result = result * (n - k + i) / i
+            let factor = n - k + i
+            let divisor = greatestCommonDivisor(factor, i)
+            result = (result / (i / divisor)) * (factor / divisor)
         }
         return result
+    }
+
+    static func greatestCommonDivisor(_ a: Int, _ b: Int) -> Int {
+        var a = abs(a)
+        var b = abs(b)
+        while b != 0 {
+            let temp = b
+            b = a % b
+            a = temp
+        }
+        return max(a, 1)
     }
 
     static func combinations(of elements: [Int], choose k: Int, limit: Int) -> [[Int]] {
